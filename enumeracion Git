@@ -1,0 +1,268 @@
+git
+"domain" AND ("api_key" OR "secret" OR "password" OR "access_token" OR "client_secret" OR "private_key" OR "AWS_SECRET_ACCESS_KEY" OR "DB_PASSWORD" OR "slack_token" OR "github_token" OR "BEGIN RSA PRIVATE KEY")
+
+filename: Search by specific file names (e.g. filename:.env)
+extension: Filter by file type (e.g. extension:json)
+path: Search within specific directories (e.g. path:/config)
+org: Limit results to an organization (e.g. org:my-company)
+repo: Focus on a specific repository (e.g. repo:my-project)
+
+
+filename:.env "DB_PASSWORD"
+
+extension:json "access_token"
+
+
+repo:vercel/next.js filename:config.js
+"domain" language:PHP password
+
+
+/public/..%252f%5google.com%252f%3F%252f..%252f..
+
+
+password
+passwd
+pwd
+pass
+api_key
+access_token
+client_secret
+auth_token
+authorizationToken
+x-api-key
+secret
+SECRET_KEY
+secret_token
+credentials
+token
+secure
+Cloud Provider Secrets
+AWS_SECRET_ACCESS_KEY
+AWS_ACCESS_KEY_ID
+aws_access_key_id
+aws_secret_key
+aws_token
+GCP_SECRET
+gcloud_api_key
+firebase_url
+shodan_api_key
+Database Credentials
+DB_PASSWORD
+DATABASE_URL
+db_password
+db_pass
+MYSQL_PASSWORD
+POSTGRES_PASSWORD
+mongo_uri
+mongodb_password
+SSH & Private Keys
+BEGIN RSA PRIVATE KEY
+BEGIN OPENSSH PRIVATE KEY
+BEGIN PGP PRIVATE KEY BLOCK
+id_rsa
+private_key
+pem private
+key
+Service-Specific Tokens
+slack_token
+discord_token
+github_token
+gitlab_token
+twilio_auth_token
+mailgun
+stripe_secret
+SF_USERNAME salesforce
+
+
+path:/config filename:database.php       # Finds database.php inside any /config directory
+path:/wp-config.php                      # Targets the WordPress config file
+path:/src/secrets                        # Looks in typical config directories
+path:/settings                           # Looks in typical settings directories
+path:/.ssh                               # Searches hidden .ssh folder
+path:/.git                               # Searches hidden .git folder
+path:**/.env                             # Finds .env files in any nested directory
+
+
+
+
+dorking
+site:domain.com "INTERNAL USE ONLY"
+site:domain.com "PRIVATE AND CONFIDENTIAL"
+site:domain.com "ONLY FOR"
+site:domain.com "HIGHLY CONFIDENTIAL"
+site:domain.com "CONFIDENTIAL"
+site:domain.com "STRICTLY CONFIDENTIAL"
+site:domain.com "SENSITIVE"
+site:domain.com "COMPANY SENSITIVE"
+site:domain.com "PRIVATE ASSET"
+
+#inurl keywords
+inurl:internal 
+inurl:private 
+inurl:folder
+inurl:asset
+inurl:_data
+inurl:upload
+inurl:uploads
+inurl:userdata
+inurl:content
+
+#file extensions
+ext:pdf
+ext:doc
+ext:docx
+ext:txt
+ext:odt
+ext:odf
+ext:xls
+ext:xlsx
+ext:csv
+ext:ppt
+ext:pptx
+
+
+#negative filtering removing the unwanted ones
+-public -sample -doc -docs -documentation -template -draft -application -form -support -default
+
+site:pastebin.com "password" OR "login" OR "credentials"
+
+site:rabbitmq.*.*.com
+site:rabbitmq.*.gov.*
+site:rabbitmq.*.edu.*
+site:rabbitmq.*.*.ccTLD
+
+#TLD: com,org,net,info,
+#ccTLD: in,jp,uk,ca,tw,au,hk,sg
+
+
+
+"Back" "Hidden" "Archive Zip" "gohttpserver" "written by"
+
+
+
+
+
+ERP (planificación de recursos empresariales) y CRM (gestión de relaciones con los clientes) de código abierto.
+
+
+"Manage databases" inurl:/database/selector
+
+
+
+ Punto final de Keycloak
+Keycloak 10.0.0 a 18.0.0 tienen una vulnerabilidad XSS basada en POST en los endpoints
+
+/auth/realms/master/clients-registrations/default
+/auth/realms/master/clients-registrations/openid-connect
+/realms/master/clients-registrations/default
+/realms/master/clients-registrations/openid-connect
+site:keycloak.*.com -www
+inurl:/realms/master
+
+cat waymore_output.txt | grep "keycloak"
+cat waymore_output.txt | grep "/realms/master"
+
+
+
+
+zonas vrigenes
+inurl:pdfjs inurl:& site:*.gov
+inurl:pdfjs inurl:& site:*.gov.*
+
+com,ai,gov,edu,net,org,in,uk,au,jp,nl,de,fr......
+
+
+#or just grep from waymore or waybackurls output
+waymore -i domain.com -mode U -oU waymore_urls.txt
+cat waymore_urls.txt | grep "pdfjs"
+
+
+🔐 Categorías de Oro Oculto
+1. Copias de seguridad y archivos
+
+/backup/, /archive/, /old/, .bak, .zip,.tar.gz
+2. Paneles de depuración y prueba
+
+/debug/, /console/, /phpinfo.php,/test/
+3. Áreas administrativas e internas
+
+/admin/, /staff/, /internal/,/hidden/
+4. Configuración y secretos
+
+.env, .git/, .svn/, /config/,/settings/
+5. API heredadas y beta
+
+/v1/, /v2/, /beta/,/legacy/
+
+
+Estos son los operadores de búsqueda que hacen que Google se doblegue a tu voluntad:
+
+site:example.com: Limita los resultados a un dominio específico. ¿Quieres solo información de la NASA? site:nasa.gov
+filetype:pdf(o ext:pdf): buscar tipos de archivos (PDF, pptx, xlsx, epub).
+intitle:keyword:La palabra clave aparece en el título de la página.
+inurl:keyword:La palabra clave aparece en la URL.
+intext:keyword:La palabra clave aparece en el cuerpo de la página (al menos una).
+allintext:kw1 kw2: Todas las palabras después del operador deben aparecer en el cuerpo del texto.
+inanchor:keyword:La palabra clave aparece en el texto de anclaje de los enlaces a la página.
+cache:URL:ver la versión en caché de una página de Google.
+link:example.com: páginas que enlazan a una URL (utilidad limitada).
+related:example.com:sitios similares a un dominio.
+"exact phrase":fuerza la coincidencia exacta de frase.
+-keyword: excluir resultados que contengan palabras clave.
+OR: OR lógico (debe estar en mayúsculas).
+*: comodín (rellena palabras desconocidas en una frase).
+before:YYYY-MM-DDy after:YYYY-MM-DD: filtros de fecha para contenido indexado.+
+
+
+
+site:target.com filetype:pdf "sensitive keywords"
+inurl:admin filetype:sql
+intitle:"index of" "backup"
+filetype:doc confidential
+
+site:nasa.gov filetype:pdf "internal"
+
+site:nasa.gov intext:"internal use only" filetype:pdf
+
+
+
+site:*.example.com intext:"internal use only" filetype:pdf
+site:*.example.com intext:"not for public release" filetype:pdf
+site:*.example.com intext:"classified" filetype:pdf
+
+
+intext:"confidential"
+
+intext:"internal use only"
+
+intext:"not for public release"
+
+intext:"proprietary"
+
+intext:"restricted"
+
+intext:"do not distribute"
+
+intext:"sensitive"
+
+intext:"for official use only"
+
+intext:"classified"
+
+intext:"private and confidential"
+
+intext:"company confidential"
+
+intext:"unauthorized access prohibited"
+
+intext:"draft - not for circulation"
+
+intext:"employee handbook"
+
+intext:"financial report"
+
+intext:"strategy document"
+
+intext:"internal memo"
+
+intext:"sensitive but classified"
