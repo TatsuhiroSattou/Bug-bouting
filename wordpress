@@ -1,0 +1,28 @@
+Enumeracion 
+urls.com/wp-json/wp/v2/users
+curl --compressed 'https://xbezos.com/wp-json/wp/v2/users'
+
+curl  'url.com/wp-json/wp/v2/users' | jq | more
+curl  'url.com/wp-json/wp/v2/users' | jq ',[]'
+curl  'url.com/wp-json/wp/v2/users' | jq -r '.[] | [.id, .name, .slug] | @csv'
+curl  "url/wp-json/wp/v2/posts?per_page=100&page=1" | jq
+curl  "url/wp-json/wp/v2/posts?per_page=100&page=1" | jq
+ enumerar archivo media 
+curl  "url/wp-json/wp/v2/media?per_page=100&page=1" | jq
+curl  "url/wp-json/wp/v2/media?per_page=100&page=1" | jq ".[] | .source_url"
+
+enumerar comentario 
+curl  "url/wp-json/wp/v2/commets?per_page=100&page=1" | jq
+
+enuemracion plugis
+wget https://raw.githubusercontent.com/Perfectdotexe/WordPress-Plugins-List/master/plugins.txt
+
+ffuf -w plugins.txt -u url/wp-content/plugins/FUZZ/readme.txt -mc 403,200
+
+--compressed: Como vimos antes, esto descomprime la respuesta automáticamente si el servidor usa GZIP.
+| jq: Si tienes instalado jq, puedes añadirlo al final para que el JSON se vea ordenado y con colores:
+curl -s --compressed 'url.com/wp-json/wp/v2/users' | jq 
+
+si quieres ver tanto los encabezados (headers) como el contenido en una sola respuesta
+curl -i --compressed 'url.com/wp-json/wp/v2/users'
+
