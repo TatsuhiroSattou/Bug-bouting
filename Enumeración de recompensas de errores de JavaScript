@@ -1,0 +1,28 @@
+Localizar archivos JavaScript
+# Con subfinder + httpx + waybackurls
+subfinder -d target.com | httpx -mc 200 | waybackurls | grep "\.js" | sort -u > js_files.txt
+
+O con gau:
+
+gau target.com | grep "\.js" | sort -u > js_files.txtgrep "\.js" | sort -u > js_files.txt
+
+Descargar los archivos
+
+cat js_files.txt | while read url; do
+  wget $url -P js_downloads/
+done
+
+Analizar los JS
+ Buscar endpoints y rutas internas
+grep -Eo "(https?:\/\/[a-zA-Z0-9\.\/\-\_]+)" js_downloads/*.js | sort -u
+
+3.2 Buscar secretos y claves API
+grep -Ei "api_key|apikey|secret|token|password|auth" js_downloads/*.js
+
+
+Usar herramientas especializadas
+SecretFinder
+python3 SecretFinder.py -i js_files.txt -o results.html.py -i js_files.txt -o results.html
+
+LinkFinder (para endpoints)
+python3 linkfinder.py -i js_files.txt -o cli.py -i js_files.txt -o cli
