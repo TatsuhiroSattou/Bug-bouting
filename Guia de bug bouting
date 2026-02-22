@@ -20,6 +20,8 @@ http://web.archive.org/cdx/search/cdx?url=google.com%2Fapi%2F*&output=text&fl=or
 
 subfinder -d dominios.txt -all -recursive -o subfinder.txt
 
+subfinder -dL domain.txt -o subfinder.txt
+
 luego de usar subfinder
 cat Subs01.txt | httpx -o AlliveSubs_XXXX.txt
 
