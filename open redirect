@@ -160,9 +160,11 @@ cat final.txt | gf redirect | uro | sort -u | tee redirect_params.txt
 Now its time for the final exploitation phase. Lets identify potential payloads and test for successful redirections
 
 cat redirect_params.txt | qsreplace "https://evil.com" | httpx-toolkit -silent -fr -mr "evil.com"
+
 Or you can also achieve same using the following method:
 
-subfinder -d vulnweb.com -all | httpx-toolkit -silent | gau | gf redirect | uro | 
+subfinder -d vulnweb.com -all | httpx-toolkit -silent | gau | gf redirect | uro | qsreplace "https://evil.com" | httpx-toolkit -silent -fr -mr "evil.com"
+
 
 
 It will display all the URLs that redirect to evil.com on the screen.
