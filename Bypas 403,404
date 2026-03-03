@@ -6,3 +6,8 @@ https://www.virustotal.com/vtapi/v2/domain/report?apikey=[TU_CLAVE]&domain=examp
 
 3. AlienVault OTX
 https://otx.alienvault.com/api/v1/indicators/hostname/domain.com/url_list?limit=500&page=1
+
+
+curl -G "https://web.archive.org/cdx/search/cdx" --data-urlencode "url=*.seek.com.au/*" --data-urlencode "collapse=urlkey" --data-urlencode "output=text" --data-urlencode "fl=original" > out.txt
+
+cat out.txt | uro | grep -E "\.xml|\.xlsx|\.docx|\.pptx|\.doc|\.txt|\.xls|\.log|\.cache|\.secret|\.db|\.tar|\.backup|\.yml|\.json|\.gz|\.tgz|\.7z|\.cvs|\.msi|\.dmg|\.apk|\.iso|\.rpm|\.deb|\.sh|\.ini|\.bin|\.dll|\.exe|\.md5|\.md|\.yaml|\.tmp|\.crt|\.pem|\.key|\.pub|\.asc|\.rar|\.zip|\.config" > filtered_urls.txt
