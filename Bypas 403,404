@@ -1,0 +1,8 @@
+1. Wayback Machine (Internet Archive)
+https://web.archive.org/cdx/search/cdx?url=*.example.com/*&collapse=urlkey&output=text&fl=original
+
+2. VirusTotal API
+https://www.virustotal.com/vtapi/v2/domain/report?apikey=[TU_CLAVE]&domain=example.com
+
+3. AlienVault OTX
+https://otx.alienvault.com/api/v1/indicators/hostname/domain.com/url_list?limit=500&page=1
