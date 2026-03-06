@@ -2,8 +2,8 @@ subsleuth
 python3 -m venv venv
 source venv/bin/activate
 ----------------------------------
-subsleuth -l 3rdlevel.txt -w /home/tatsu_/subsleuth/wordlist.txt -o final2.txt
 
+subsleuth -l .txt -w /home/tatsu_/subsleuth/wordlist.txt -o output.txt
 subfinder -d dominios.txt -all -recursive -o subfinder.txt
 
 
