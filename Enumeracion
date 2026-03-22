@@ -1,0 +1,11 @@
+enumeracion 
+subfinder -dL dominios.txt -all -recursive -o subfinder.txt
+
+amass enum -d runtastic.com -o listadobig.txt
+assetfinder --subs-only adidas.com -o aseet.txt
+
+findomain -t google.com -u resultados.txt
+findomain -f dominios.txt -u find.txt
+
+python sublist3r.py -d example.com
+
