@@ -9,3 +9,4 @@ findomain -f dominios.txt -u find.txt
 
 python sublist3r.py -d example.com
 
+python sublist3r.py -d adidas.com -o /home/tatsu_/adidas/sublist3.txt
