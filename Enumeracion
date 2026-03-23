@@ -15,3 +15,4 @@ crt.sh -d dominio.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t subdomai
 ./crt.sh -d adidas.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t /home/tatsu_/adidas/crt.txt
 cat crt.txt crt1.txt  subfinder.txt sublist3.txt sublist31.txt listadobig.txt find.txt aseet1.txt aseet.txt | anew finalimp.txt
 sort -u finalimp.txt | httprobe > uniq.txt
+paramspider -d runtastic.com
