@@ -15,4 +15,15 @@ crt.sh -d dominio.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t subdomai
 ./crt.sh -d adidas.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t /home/tatsu_/adidas/crt.txt
 cat crt.txt crt1.txt  subfinder.txt sublist3.txt sublist31.txt listadobig.txt find.txt aseet1.txt aseet.txt | anew finalimp.txt
 sort -u finalimp.txt | httprobe > uniq.txt
+eyewitness --web -f uniq.txt -d /path_to_save_screenshots
+
+
+echo "<html><body>" > index.html
+for I in *.jpg *.png *.jpeg; do
+    echo "<h3>$I</h3>" >> index.html
+    echo "<img src=\"$I\" style='max-width:300px;'><br><hr>" >> index.html
+done
+echo "</body></html>" >> index.html
+
 paramspider -d runtastic.com
+
