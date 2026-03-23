@@ -12,3 +12,4 @@ python sublist3r.py -d example.com
 python sublist3r.py -d adidas.com -o /home/tatsu_/adidas/sublist3.txt
 
 crt.sh -d dominio.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t subdomains.txt
+./crt.sh -d adidas.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t /home/tatsu_/adidas/crt.txt
