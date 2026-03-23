@@ -10,3 +10,5 @@ findomain -f dominios.txt -u find.txt
 python sublist3r.py -d example.com
 
 python sublist3r.py -d adidas.com -o /home/tatsu_/adidas/sublist3.txt
+
+crt.sh -d dominio.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t subdomains.txt
