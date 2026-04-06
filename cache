@@ -1,0 +1,40 @@
+🧠 Paso 1: Subdominios
+subfinder -dL domains.txt -all -recursive -o subs.txt
+🧠 Paso 2: Subdominios vivos + info útil
+cat subs.txt | httpx -status-code -title -tech-detect -o alive.txt
+🧠 Paso 3: URLs (histórico + actual)
+cat alive.txt | waybackurls | tee wayback.txt
+
+💡 EXTRA PRO:
+
+cat alive.txt | gau | tee gau.txt
+
+Luego:
+
+cat wayback.txt gau.txt | sort -u > urls.txt
+🧠 Paso 4: FILTRAR BASURA 🔥
+cat urls.txt | grep -Ev "\.jpg|\.png|\.gif|\.css|\.woff|\.ttf|\.svg|\.mp4|\.pdf" > clean.txt
+🧠 Paso 5: separar cosas importantes
+🔥 Parámetros
+cat clean.txt | grep "=" > params.txt
+🔥 JS (MUY IMPORTANTE)
+cat clean.txt | grep "\.js" > js.txt
+
+👉 Luego:
+
+cat js.txt | while read url; do python3 linkfinder.py -i "$url" -o cli; done
+🔥 Endpoints interesantes
+cat clean.txt | grep -E "api|v1|v2|v3|graphql|ajax" > api.txt
+🚀 4. Ahora lo importante (donde ganas bugs)
+🎯 Para Cache Poisoning
+
+Filtra:
+
+cat params.txt | grep -E "cache|redirect|url|next|data|rsc" > cache_targets.txt
+🎯 Para XSS
+cat params.txt | gf xss
+
+(si tienes gf)
+
+🎯 Para Open Redirect
+cat params.txt | grep -E "redirect|url|next|return" 
