@@ -1,7 +1,7 @@
 Localizar archivos JavaScript
 # Con subfinder + httpx + waybackurls
 subfinder -d target.com | httpx -mc 200 | waybackurls | grep "\.js" | sort -u > js_files.txt
-
+cat subs.txt | httpx -mc 200 | waybackurls | katana | gau | grep "\.js" | sort -u > js_files.txt
 O con gau:
 
 gau target.com | grep "\.js" | sort -u > js_files.txtgrep "\.js" | sort -u > js_files.txt
