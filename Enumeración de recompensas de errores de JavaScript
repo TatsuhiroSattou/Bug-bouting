@@ -22,7 +22,7 @@ grep -Ei "api_key|apikey|secret|token|password|auth" js_downloads/*.js
 
 Usar herramientas especializadas
 SecretFinder
-python3 SecretFinder.py -i js_files.txt -o results.html.py -i js_files.txt -o results.html
+python3 SecretFinder .py - i js_files .txt -o results .html
 
 LinkFinder (para endpoints)
-python3 linkfinder.py -i js_files.txt -o cli.py -i js_files.txt -o cli
+python3 linkfinder .py - i js_files .txt -o cli
