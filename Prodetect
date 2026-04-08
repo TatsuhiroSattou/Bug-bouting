@@ -1,0 +1,143 @@
+import requests
+import hashlib
+import random
+import string
+import sys
+
+# -------- CONFIG --------
+TIMEOUT = 10
+
+def random_cb():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+
+def get_hash(content):
+    return hashlib.md5(content).hexdigest()
+
+def is_cache_hit(headers):
+    cache_headers = [
+        "X-Cache", "CF-Cache-Status", "X-Proxy-Cache",
+        "X-Cache-Hits", "Age", "Via"
+    ]
+    for h in cache_headers:
+        if h in headers:
+            value = headers[h].lower()
+            if any(x in value for x in ["hit", "cached"]):
+                return True
+    return False
+
+def safe_request(url, headers=None):
+    try:
+        return requests.get(
+            url,
+            headers=headers or {},
+            timeout=TIMEOUT,
+            allow_redirects=True
+        )
+    except requests.RequestException:
+        return None
+
+def detect_unkeyed_inputs(url, test_headers):
+    results = {}
+
+    # -------- BASELINE --------
+    cache_buster = f"?cb={random_cb()}"
+    baseline_resp = safe_request(url + cache_buster)
+
+    if not baseline_resp:
+        print("[!] Error en baseline request")
+        return results
+
+    baseline_hash = get_hash(baseline_resp.content)
+    print(f"[+] Baseline hash: {baseline_hash}")
+
+    for header, value in test_headers.items():
+        print(f"\n[>] Testing header: {header}")
+
+        # -------- TEST SIN CACHE --------
+        test_cb = f"?cb={random_cb()}"
+        test_resp = safe_request(url + test_cb, headers={header: value})
+
+        if not test_resp:
+            print("[-] Error en test request")
+            continue
+
+        test_hash = get_hash(test_resp.content)
+
+        if test_hash == baseline_hash:
+            print("[-] No cambia la respuesta")
+            continue
+
+        print("[+] La respuesta cambia (input interesante)")
+
+        # -------- TEST EN CACHE --------
+        cached_resp = safe_request(url, headers={header: value})
+
+        if not cached_resp:
+            print("[-] Error en cache request")
+            continue
+
+        cached_hash = get_hash(cached_resp.content)
+        cache_hit = is_cache_hit(cached_resp.headers)
+
+        print(f"[i] Cache detectado: {cache_hit}")
+
+        if cached_hash == baseline_hash:
+            print("[🔥] UNKEYED INPUT DETECTADO")
+            results[header] = {
+                "status": "UNKEYED",
+                "cache_hit": cache_hit
+            }
+        else:
+            print("[i] Afecta cache (KEYED)")
+            results[header] = {
+                "status": "KEYED",
+                "cache_hit": cache_hit
+            }
+
+    return results
+
+
+# -------- MAIN CLI --------
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"Uso: python3 {sys.argv[0]} <url | urls.txt>")
+        sys.exit(1)
+
+    input_value = sys.argv[1]
+
+    test_headers = {
+        "X-Forwarded-Host": "evil.com",
+        "X-Host": "evil.com",
+        "X-Forwarded-For": "127.0.0.1",
+        "X-Original-URL": "/admin",
+        "X-Rewrite-URL": "/admin",
+        "User-Agent": "evil-bot",
+        "Referer": "https://evil.com"
+    }
+
+    # -------- SOPORTE URL O ARCHIVO --------
+    if input_value.startswith("http"):
+        urls = [input_value]
+    else:
+        try:
+            with open(input_value) as f:
+                urls = [line.strip() for line in f if line.strip()]
+        except FileNotFoundError:
+            print(f"[!] Archivo no encontrado: {input_value}")
+            sys.exit(1)
+
+    # -------- EJECUCIÓN --------
+    for url in urls:
+        print(f"\n\n===== TESTING: {url} =====")
+
+        results = detect_unkeyed_inputs(url, test_headers)
+
+        if results:
+            print("\n🔥 Posibles vulnerables:")
+            for h, info in results.items():
+                print(f"{url} → {h}: {info}")
+
+                with open("vulns.txt", "a") as out:
+                    out.write(f"{url} → {h}: {info}\n")
+        else:
+            print("[-] Nada interesante")
