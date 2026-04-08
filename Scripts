@@ -1,0 +1,93 @@
+import requests
+import hashlib
+import random
+import string
+import sys
+
+# Desactivar avisos de SSL
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+TIMEOUT = 10
+
+def random_cb():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+
+def get_hash(content):
+    return hashlib.md5(content).hexdigest()
+
+def is_cache_hit(headers):
+    cache_headers = ["X-Cache", "CF-Cache-Status", "X-Proxy-Cache", "Age", "Via"]
+    for h in cache_headers:
+        if h in headers:
+            if any(x in headers[h].lower() for x in ["hit", "cached"]):
+                return True
+    return False
+
+def detect_unkeyed_inputs(url, headers_list):
+    results = {}
+    
+    # 1. BASELINE
+    cb = f"?cb={random_cb()}"
+    try:
+        baseline_resp = requests.get(url + cb, timeout=TIMEOUT, verify=False, allow_redirects=False)
+        baseline_hash = get_hash(baseline_resp.content)
+    except:
+        print(f"[!] Error conectando a {url}")
+        return results
+
+    print(f"\n[*] Baseline OK. Probando {len(headers_list)} cabeceras...")
+
+    for header in headers_list:
+        header = header.strip()
+        if not header: continue
+
+        # 2. TEST DE REFLEXIÓN
+        test_val = "evil.com"
+        try:
+            test_resp = requests.get(url + f"?cb={random_cb()}", 
+                                     headers={header: test_val}, 
+                                     timeout=TIMEOUT, 
+                                     verify=False,
+                                     allow_redirects=False)
+            
+            if get_hash(test_resp.content) != baseline_hash:
+                # 3. TEST DE ENVENENAMIENTO (Sin cabecera)
+                # Intentamos ver si la versión con 'evil.com' se quedó pegada
+                poison_check = requests.get(url + f"?cb={random_cb()}", timeout=TIMEOUT, verify=False)
+                
+                status = "UNKEYED (🔥 VULN)" if get_hash(poison_check.content) == get_hash(test_resp.content) else "KEYED (Safe)"
+                hit = is_cache_hit(test_resp.headers)
+                
+                print(f"[!] {header} -> {status} | Cache Hit: {hit}")
+                results[header] = {"status": status, "cache_hit": hit}
+        except:
+            continue
+            
+    return results
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print(f"Uso: python3 {sys.argv[0]} <urls.txt> <headers.txt>")
+        sys.exit(1)
+
+    url_file = sys.argv[1]
+    header_file = sys.argv[2]
+
+    # Cargar URLs
+    with open(url_file) as f:
+        urls = [line.strip() for line in f if line.strip()]
+
+    # Cargar Cabeceras
+    with open(header_file) as f:
+        headers_to_test = [line.strip() for line in f if line.strip()]
+
+    for url in urls:
+        print(f"\n{'='*40}\nTARGET: {url}\n{'='*40}")
+        res = detect_unkeyed_inputs(url, headers_to_test)
+        
+        if res:
+            with open("fuego.txt", "a") as out:
+                for h, info in res.items():
+                    if "UNKEYED" in info['status']:
+                        out.write(f"[VULN] {url} -> {h}\n")
