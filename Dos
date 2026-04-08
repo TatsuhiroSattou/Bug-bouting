@@ -1,0 +1,62 @@
+import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from requests.exceptions import TooManyRedirects, RequestException
+
+# Load crawled endpoints and add cache buster
+with open("crawled.txt", "r") as f:
+    endpoints = [url.strip() + "?cache=foobar" for url in f.readlines()]
+
+vulnerable_endpoints = []
+headers = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux i686; rv:133.0) Gecko/20100101 Firefox/133.0",
+    "Accept": "*/*",
+    "X-Https": "foobar"
+}
+
+# Create a session with max_redirects set to 5
+session = requests.Session()
+session.headers.update(headers)
+session.max_redirects = 5
+
+# Custom adapter to modify headers for redirects
+class NoXHttpsRedirectAdapter(requests.adapters.HTTPAdapter):
+    def send(self, request, **kwargs):
+        # Check if the request has a previous response (redirect)
+        response = super().send(request, **kwargs)
+        
+        # If we have a redirect, remove the 'X-Https' header
+        if response.history:
+            request.headers.pop('X-Https', None)
+        
+        return response
+
+# Mount the adapter to the session
+adapter = NoXHttpsRedirectAdapter()
+session.mount('http://', adapter)
+session.mount('https://', adapter)
+
+def check_endpoint(endpoint):
+    try:
+        # Use the session to send the GET request
+        response = session.get(endpoint, timeout=10)
+    except TooManyRedirects:
+        # If TooManyRedirects exception occurs, it means we hit the max redirect limit
+        print(f"[VULNERABLE] Infinite redirect detected: {endpoint}")
+        return endpoint
+    except RequestException as e:
+        print(f"[ERROR] Failed to check {endpoint}: {e}")
+    
+    return None
+
+# Use ThreadPoolExecutor to check endpoints concurrently
+with ThreadPoolExecutor(max_workers=10) as executor:
+    future_to_endpoint = {executor.submit(check_endpoint, endpoint): endpoint for endpoint in endpoints}
+    for future in as_completed(future_to_endpoint):
+        result = future.result()
+        if result:
+            vulnerable_endpoints.append(result)
+
+# Save the results
+with open("poisoned_endpoints.txt", "w") as f:
+    for url in vulnerable_endpoints:
+        f.write(url + "\n")
