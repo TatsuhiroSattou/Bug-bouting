@@ -1,0 +1,157 @@
+import requests
+from urllib.parse import urlparse
+import sys
+import os
+import time
+
+# =========================
+# CONFIG
+# =========================
+OUTPUT_DIR = "results"
+OUTPUT_FILE = os.path.join(OUTPUT_DIR, "cache_poisoning_candidates.txt")
+
+# Crear carpeta si no existe
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+# =========================
+# FUNCIONES
+# =========================
+
+def detect_cdn(headers):
+    headers_lower = {k.lower(): v.lower() for k, v in headers.items()}
+
+    if "cf-cache-status" in headers_lower or "cf-ray" in headers_lower:
+        return "Cloudflare"
+    if "fastly" in headers_lower.get("via", "") or "x-served-by" in headers_lower:
+        return "Fastly"
+    if "akamai" in str(headers_lower):
+        return "Akamai"
+    if "cloudfront" in headers_lower.get("via", "") or "x-cache" in headers_lower:
+        return "CloudFront"
+
+    return "Unknown"
+
+
+def is_cacheable(headers):
+    cache_control = headers.get("cache-control", "").lower()
+
+    if "no-store" in cache_control or "private" in cache_control:
+        return False
+
+    if "max-age=0" in cache_control:
+        return False
+
+    return True
+
+
+def is_valid_status(response):
+    # Ignorar redirects
+    return response.status_code not in [301, 302, 303, 307, 308]
+
+
+def is_cache_hit(headers):
+    cf = headers.get("cf-cache-status", "").upper()
+    x_cache = headers.get("x-cache", "").upper()
+
+    if cf == "HIT":
+        return True
+
+    if "HIT" in x_cache:
+        return True
+
+    return False
+
+
+def classify_content(url):
+    static_ext = [
+        ".js", ".css", ".png", ".jpg", ".jpeg",
+        ".gif", ".svg", ".ico", ".woff", ".woff2"
+    ]
+
+    path = urlparse(url).path.lower()
+
+    for ext in static_ext:
+        if path.endswith(ext):
+            return "Static"
+
+    return "Dynamic"
+
+
+def confirm_cache(url):
+    """
+    Hace doble request para confirmar cache real
+    """
+    try:
+        r1 = requests.get(url, timeout=10)
+        if not is_valid_status(r1):
+            return False, "Redirect"
+
+        time.sleep(1)
+
+        r2 = requests.get(url, timeout=10)
+        headers2 = r2.headers
+
+        if is_cache_hit(headers2):
+            return True, "HIT"
+
+        return False, headers2.get("cf-cache-status", "No HIT")
+
+    except Exception as e:
+        return False, f"Error: {e}"
+
+
+def save_candidate(url):
+    with open(OUTPUT_FILE, "a") as f:
+        f.write(url + "\n")
+
+
+def analyze_url(url):
+    try:
+        r = requests.get(url, timeout=10)
+        headers = r.headers
+
+        if not is_valid_status(r):
+            print(f"⚠️ {url} -> Redirect ignorado")
+            return
+
+        cdn = detect_cdn(headers)
+        cacheable = is_cacheable(headers)
+        content = classify_content(url)
+
+        cache_ok, cache_status = confirm_cache(url)
+
+        print(f"\n🔎 {url}")
+        print(f"   CDN: {cdn}")
+        print(f"   Cacheable: {cacheable}")
+        print(f"   Tipo: {content}")
+        print(f"   Cache Status: {cache_status}")
+
+        if cdn != "Unknown" and cacheable and content == "Dynamic" and cache_ok:
+            print("🔥 CANDIDATO REAL ENCONTRADO")
+            save_candidate(url)
+
+    except Exception as e:
+        print(f"❌ Error en {url}: {e}")
+
+
+# =========================
+# MAIN
+# =========================
+
+def main():
+    if len(sys.argv) < 2:
+        print("Uso: python3 cache_recon.py urls.txt")
+        return
+
+    input_file = sys.argv[1]
+
+    with open(input_file, "r") as f:
+        urls = [line.strip() for line in f if line.strip()]
+
+    for url in urls:
+        analyze_url(url)
+
+
+if __name__ == "__main__":
+    main()
