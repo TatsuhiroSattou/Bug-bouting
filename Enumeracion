@@ -4,6 +4,7 @@ subfinder -dL dominios.txt -all -recursive -o subfinder.txt
 amass enum -d runtastic.com -o listadobig.txt
  amass enum -df dominio.txt -o listadobig.txt
 assetfinder --subs-only adidas.com -o aseet.txt
+while read -r dominio; do assetfinder --subs-only "$dominio" >> asset.txt; done < dominios.txt
 
 findomain -t google.com -u resultados.txt
 findomain -f dominios.txt -u find.txt
