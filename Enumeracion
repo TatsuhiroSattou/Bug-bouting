@@ -15,6 +15,7 @@ findomain -t google.com -u resultados.txt
 findomain -f dominios.txt -u find.txt
 ------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------
+source venv/bin/activate
 python sublist3r.py -d example.com
 
 python sublist3r.py -d adidas.com -o /home/tatsu_/adidas/sublist3.txt
