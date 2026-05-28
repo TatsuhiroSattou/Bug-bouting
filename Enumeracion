@@ -1,25 +1,33 @@
 enumeracion 
 subfinder -dL dominios.txt -all -recursive -o subfinder.txt
-
+------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 amass enum -d runtastic.com -o listadobig.txt
  amass enum -df dominio.txt -o listadobig.txt
+sort -u listadobig.txt listadobig1.txt -o listado_final.txt
+------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 assetfinder --subs-only adidas.com -o aseet.txt
 while read -r dominio; do assetfinder --subs-only "$dominio" >> asset.txt; done < dominios.txt
-
+------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 findomain -t google.com -u resultados.txt
 findomain -f dominios.txt -u find.txt
-
+------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 python sublist3r.py -d example.com
 
 python sublist3r.py -d adidas.com -o /home/tatsu_/adidas/sublist3.txt
-
+------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 crt.sh -d dominio.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t subdomains.txt
 ./crt.sh -d adidas.com | grep -E '^[a-zA-Z0-9.-]+\.[a-zA-Z]+$' | anew -t /home/tatsu_/adidas/crt.txt
 cat crt.txt crt1.txt  subfinder.txt sublist3.txt sublist31.txt listadobig.txt find.txt aseet1.txt aseet.txt | anew finalimp.txt
 sort -u finalimp.txt | httprobe > uniq.txt
 eyewitness --web -f uniq.txt -d /path_to_save_screenshots
  python Python/EyeWitness.py  --web -f  /home/tatsu_/adidas/uniq.txt -d /home/tatsu_/fotos
-
+------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------
 echo "<html><body>" > index.html
 for I in *.jpg *.png *.jpeg; do
     echo "<h3>$I</h3>" >> index.html
