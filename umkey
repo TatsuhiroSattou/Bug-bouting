@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+# cache_poisoning_detector.py
+
+import requests
+import hashlib
+import time
+import sys
+import json
+from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor
+
+class UnkeyedInputDetector:
+    def __init__(self, base_url, verbose=True):
+        self.base_url = base_url.rstrip('/')
+        self.verbose = verbose
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Security Test)',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        })
+        self.results = {}
+
+    def _get_cache_buster(self):
+        """Genera un parámetro único para evitar la caché"""
+        return f"?cb={hashlib.md5(str(time.time()).encode()).hexdigest()}"
+
+    def _get_content_hash(self, url, headers=None):
+        """Obtiene el hash MD5 del contenido de una URL"""
+        try:
+            response = self.session.get(url, headers=headers or {}, timeout=10)
+            if response.status_code != 200:
+                if self.verbose:
+                    print(f"    ⚠️  Status code: {response.status_code}")
+                return None
+            return hashlib.md5(response.content).hexdigest()
+        except requests.exceptions.Timeout:
+            print(f"    ⏰ Timeout")
+            return None
+        except requests.exceptions.ConnectionError:
+            print(f"    🔌 Error de conexión")
+            return None
+        except Exception as e:
+            print(f"    ❌ Error: {e}")
+            return None
+
+    def analyze_single_url(self, test_headers):
+        """Analiza una única URL"""
+        print(f"\n🔍 Analizando: {self.base_url}")
+
+        # 1. Petición BASE (con cache buster)
+        cb = self._get_cache_buster()
+        test_url = self.base_url + cb
+        print(f"  📡 Obteniendo baseline...")
+
+        baseline_hash = self._get_content_hash(test_url)
+        if not baseline_hash:
+            print(f"  ❌ No se pudo obtener la baseline para {self.base_url}")
+            return {
+                'url': self.base_url,
+                'error': 'No se pudo obtener baseline',
+                'unkeyed': {}
+            }
+
+        print(f"  ✅ Baseline obtenida: {baseline_hash[:8]}...")
+
+        results = {}
+        unkeyed_found = False
+
+        # 2. Probar cada encabezado
+        for header, value in test_headers.items():
+            if self.verbose:
+                print(f"\n  🧪 Probando: {header} = {value}")
+
+            # Petición con el encabezado (con cache buster)
+            test_hash = self._get_content_hash(test_url, headers={header: value})
+
+            if not test_hash:
+                continue
+
+            # Si el contenido cambió
+            if test_hash != baseline_hash:
+                if self.verbose:
+                    print(f"    🔄 Contenido cambió: {test_hash[:8]}...")
+
+                # Verificar si el encabezado es UNKEYED
+                cached_hash = self._get_content_hash(self.base_url, headers={header: value})
+
+                if cached_hash == baseline_hash:
+                    print(f"    ⚠️  ¡UNKEYED! {header} no es considerado en la caché")
+                    unkeyed_found = True
+                    results[header] = {
+                        'status': 'UNKEYED',
+                        'test_value': value,
+                        'baseline_hash': baseline_hash,
+                        'test_hash': test_hash,
+                        'cached_hash': cached_hash
+                    }
+                else:
+                    if self.verbose:
+                        print(f"    ✅ KEYED: {header} SÍ es considerado en la caché")
+                    results[header] = {'status': 'KEYED'}
+            else:
+                if self.verbose:
+                    print(f"    ✅ Sin efecto: {header} no cambió el contenido")
+                results[header] = {'status': 'NO_EFFECT'}
+
+        return {
+            'url': self.base_url,
+            'baseline_hash': baseline_hash,
+            'unkeyed': {k: v for k, v in results.items() if v.get('status') == 'UNKEYED'},
+            'all_results': results,
+            'has_unkeyed': unkeyed_found
+        }
+
+def process_urls_file(filename, test_headers, output_file=None, max_workers=3):
+    """
+    Procesa un archivo con múltiples URLs
+
+    Args:
+        filename: Ruta del archivo .txt con URLs
+        test_headers: Diccionario de headers a probar
+        output_file: Archivo de salida para resultados (opcional)
+        max_workers: Número de workers concurrentes (por defecto 3 para no saturar)
+    """
+    # Leer URLs del archivo
+    try:
+        with open(filename, 'r') as f:
+            urls = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    except FileNotFoundError:
+        print(f"❌ Error: No se encontró el archivo '{filename}'")
+        sys.exit(1)
+
+    print(f"📊 Procesando {len(urls)} URLs...")
+    print(f"🧪 Headers a probar: {len(test_headers)}")
+    print("-" * 60)
+
+    results = []
+    total = len(urls)
+
+    # Usar ThreadPoolExecutor para procesar en paralelo (pero con límite)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {}
+        for url in urls:
+            detector = UnkeyedInputDetector(url, verbose=True)
+            future = executor.submit(detector.analyze_single_url, test_headers)
+            futures[future] = url
+
+        # Recoger resultados
+        for i, future in enumerate(futures, 1):
+            url = futures[future]
+            try:
+                result = future.result(timeout=60)
+                results.append(result)
+                print(f"\n✅ [{i}/{total}] Completado: {url}")
+            except Exception as e:
+                print(f"\n❌ [{i}/{total}] Error en {url}: {e}")
+                results.append({
+                    'url': url,
+                    'error': str(e),
+                    'unkeyed': {}
+                })
+
+    # Resumen
+    print("\n" + "="*60)
+    print("📊 RESUMEN DE RESULTADOS")
+    print("="*60)
+
+    vulnerable = [r for r in results if r.get('has_unkeyed', False)]
+    errors = [r for r in results if r.get('error')]
+    clean = [r for r in results if r not in vulnerable and r not in errors]
+
+    print(f"Total URLs procesadas: {len(results)}")
+    print(f"🔴 Vulnerables (UNKEYED): {len(vulnerable)}")
+    print(f"🟢 Limpias: {len(clean)}")
+    print(f"❌ Errores: {len(errors)}")
+
+    if vulnerable:
+        print("\n⚠️  URLs con posibles vulnerabilidades:")
+        for v in vulnerable:
+            print(f"  - {v['url']}")
+            for header, data in v.get('unkeyed', {}).items():
+                print(f"    → {header}: UNKEYED (valor probado: {data['test_value']})")
+
+    # Guardar resultados en archivo JSON
+    if output_file:
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = f"{output_file}_{timestamp}.json"
+        with open(filename, 'w') as f:
+            json.dump({
+                'timestamp': timestamp,
+                'total_urls': len(results),
+                'test_headers': test_headers,
+                'results': results
+            }, f, indent=2)
+        print(f"\n📁 Resultados guardados en: {filename}")
+
+    # Guardar URLs vulnerables en archivo TXT
+    if vulnerable:
+        vuln_file = f"vulnerable_urls_{timestamp}.txt"
+        with open(vuln_file, 'w') as f:
+            for v in vulnerable:
+                f.write(f"{v['url']}\n")
+        print(f"📁 URLs vulnerables guardadas en: {vuln_file}")
+
+    return results
+
+# === CONFIGURACIÓN PRINCIPAL ===
+if __name__ == "__main__":
+    # Verificar argumentos
+    if len(sys.argv) < 2:
+        print("Uso: python cache_poisoning_detector.py <archivo_urls.txt> [archivo_salida.json]")
+        print("\nEjemplo:")
+        print("  python cache_poisoning_detector.py urls.txt")
+        print("  python cache_poisoning_detector.py urls.txt resultados")
+        sys.exit(1)
+
+    input_file = sys.argv[1]
+    output_file = sys.argv[2] if len(sys.argv) > 2 else "cache_poisoning_results"
+
+    # Headers a probar (puedes personalizar)
+    TEST_HEADERS = {
+        "X-Forwarded-For": "127.0.0.1",
+        "X-Forwarded-Host": "evil.com",
+        "X-Forwarded-Proto": "https",
+        "X-Original-URL": "/admin",
+        "X-Rewrite-URL": "/admin",
+        "Accept-Language": "es",
+        "Accept-Encoding": "gzip, deflate",
+        "Referer": "https://google.com",
+        "X-Real-IP": "127.0.0.1",
+        "X-Originating-IP": "127.0.0.1",
+    }
+
+    # Ejecutar
+    print("="*60)
+    print("🔒 DETECTOR DE UNKEYED INPUTS (WEB CACHE POISONING)")
+    print("="*60)
+    print(f"📁 Archivo de entrada: {input_file}")
+    print(f"📁 Archivo de salida: {output_file}")
+    print(f"🧪 Headers a probar: {len(TEST_HEADERS)}")
+    print("-"*60)
+
+    results = process_urls_file(
+        input_file,
+        TEST_HEADERS,
+        output_file=output_file,
+        max_workers=3  # Ajusta según necesidad (3-5 es seguro)
+    )
