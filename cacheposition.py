@@ -1,3 +1,21 @@
+# Procesar un archivo con URLs
+python3 cache_poisoning_validator.py -f urls.txt
+
+# Procesar una URL individual
+python3 cache_poisoning_validator.py -u https://ejemplo.com
+
+# Procesar con más velocidad
+python3 cache_poisoning_validator.py -f urls.txt -w 10
+
+# Modo silencioso (menos output)
+python3 cache_poisoning_validator.py -f urls.txt -q
+
+# Guardar resultados con nombre personalizado
+python3 cache_poisoning_validator.py -f urls.txt -o mis_resultados
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------
 #!/usr/bin/env python3
 # cache_poisoning_validator.py
 # Herramienta para detectar y validar Web Cache Poisoning en múltiples URLs
