@@ -1,0 +1,63 @@
+id: xss-reflected-multi-param
+
+info:
+  name: Reflected XSS - Multi Parameter Fuzzing
+  author: tatsu
+  severity: medium
+  description: Detecta XSS reflejado probando múltiples parámetros comunes con payload único aleatorio para evitar falsos positivos
+  tags: xss,fuzz,reflected
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/?q={{payload}}"
+      - "{{BaseURL}}/?s={{payload}}"
+      - "{{BaseURL}}/?search={{payload}}"
+      - "{{BaseURL}}/?query={{payload}}"
+      - "{{BaseURL}}/?keyword={{payload}}"
+      - "{{BaseURL}}/?id={{payload}}"
+      - "{{BaseURL}}/?page={{payload}}"
+      - "{{BaseURL}}/?url={{payload}}"
+      - "{{BaseURL}}/?redirect={{payload}}"
+      - "{{BaseURL}}/?next={{payload}}"
+      - "{{BaseURL}}/?return={{payload}}"
+      - "{{BaseURL}}/?returnUrl={{payload}}"
+      - "{{BaseURL}}/?name={{payload}}"
+      - "{{BaseURL}}/?username={{payload}}"
+      - "{{BaseURL}}/?email={{payload}}"
+      - "{{BaseURL}}/?text={{payload}}"
+      - "{{BaseURL}}/?msg={{payload}}"
+      - "{{BaseURL}}/?message={{payload}}"
+      - "{{BaseURL}}/?comment={{payload}}"
+      - "{{BaseURL}}/?content={{payload}}"
+      - "{{BaseURL}}/?callback={{payload}}"
+      - "{{BaseURL}}/?ref={{payload}}"
+      - "{{BaseURL}}/?referrer={{payload}}"
+      - "{{BaseURL}}/?source={{payload}}"
+      - "{{BaseURL}}/?lang={{payload}}"
+      - "{{BaseURL}}/?locale={{payload}}"
+      - "{{BaseURL}}/?file={{payload}}"
+      - "{{BaseURL}}/?path={{payload}}"
+
+    payloads:
+      payload:
+        - '"><u>nuclei{{randstr}}</u>'
+
+    stop-at-first-match: false
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "<u>nuclei{{randstr}}</u>"
+
+      - type: dsl
+        dsl:
+          - "!contains(body, '&lt;u&gt;nuclei')"
+
+    extractors:
+      - type: dsl
+        name: parametro_vulnerable
+        dsl:
+          - "request_url"
