@@ -1,0 +1,7 @@
+subfinder -d target.com -all -silent | httpx-toolkit -o file.txt
+cat file.txt | grep -oP '(?<=https?:\/\/).*' >input.txt
+python java2s3.py input.txt target.com output.txt
+cat output3.txt | grep -E "S3 Buckets: \['[^]]+"
+cat output.txt | grep -oP 'https?://[a-zA-Z0-9.-]*s3(\.dualstack)?\.ap-[a-z0-9-]+\.amazonaws\.com/[^\s"<>]+' | sort -u
+cat output3.txt | grep -oP '([a-zA-Z0-9.-]+\.s3(\.dualstack)?\.[a-z0-9-]+\.amazonaws\.com)' | sort -u
+Press enter or click to view image in full size
